@@ -1,6 +1,6 @@
 {
 	"name": "finmap-mcp",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "MCP server providing financial market data from finmap.org",
 	"main": "./dist/stdio-server.js",
 	"type": "module",
@@ -80,7 +80,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.2.0",
 		"@types/node": "^24.3.0",
-    "rimraf": "^6.0.1",
+		"rimraf": "^6.0.1",
 		"tsx": "^4.20.4",
 		"typescript": "5.9.2",
 		"wrangler": "^4.30.0"
