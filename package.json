@@ -1,0 +1,88 @@
+{
+	"name": "finmap-mcp",
+	"version": "1.0.0",
+	"description": "MCP server providing financial market data from finmap.org",
+	"main": "./dist/stdio-server.js",
+	"type": "module",
+	"bin": {
+		"finmap-mcp": "./dist/stdio-server.js"
+	},
+	"files": [
+		"dist/core.js",
+		"dist/stdio-server.js",
+		"README.md",
+		"LICENSE"
+	],
+	"keywords": [
+		"agent",
+		"agentic",
+		"ai",
+		"financial-data",
+		"historical-data",
+		"llm",
+		"market-capitalization",
+		"market-data",
+		"market-sectors",
+		"market-value",
+		"mcp",
+		"mcp-server",
+		"modelcontextprotocol",
+		"stock-exchange",
+		"stock-market",
+		"stock-price-data",
+		"tickers"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/finmap-org/mcp-server.git"
+	},
+	"homepage": "https://github.com/finmap-org/mcp-server#readme",
+	"bugs": {
+		"url": "https://github.com/finmap-org/mcp-server/issues"
+	},
+	"author": {
+		"name": "finmap.org",
+		"email": "contact@finmap.org",
+		"url": "https://finmap.org"
+	},
+	"license": "LGPL-3.0-or-later",
+	"funding": [
+		{
+			"type": "patreon",
+			"url": "https://patreon.com/finmap"
+		},
+		"https://boosty.to/finmap"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"scripts": {
+		"clean": "rimraf dist",
+		"build": "npm run clean && npm run build:stdio && npm run build:worker",
+		"build:stdio": "npm run clean && tsc --project tsconfig.stdio.json",
+		"build:worker": "wrangler build",
+		"dev:stdio": "tsx src/stdio-server.ts",
+		"dev:worker": "wrangler dev",
+		"deploy": "wrangler deploy",
+		"format": "biome format --write",
+		"lint:fix": "biome lint --fix",
+		"start": "wrangler dev",
+		"cf-typegen": "wrangler types",
+		"type-check": "tsc --noEmit",
+		"prepublishOnly": "npm run build:stdio",
+		"package": "npm run build:stdio && npm pack --pack-destination dist"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "1.17.3",
+		"agents": "^0.0.113",
+		"zod": "^3.25.76"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.0",
+		"@types/node": "^24.3.0",
+    "rimraf": "^6.0.1",
+		"tsx": "^4.20.4",
+		"typescript": "5.9.2",
+		"wrangler": "^4.30.0"
+	}
+}
