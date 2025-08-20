@@ -1,0 +1,29 @@
+# Source files
+src/
+tsconfig*.json
+biome.json
+
+# Development files
+.git/
+.gitignore
+.vscode/
+node_modules/
+
+# Worker-specific files (not needed for npm package)
+wrangler.jsonc
+worker-configuration.d.ts
+
+# Test files
+test/
+tests/
+*.test.js
+*.test.ts
+
+# Build artifacts we don't want
+dist/index.js
+dist/index.js.map
+dist/README.md
+
+# Development scripts
+.env*
+*.log
