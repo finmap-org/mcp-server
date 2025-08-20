@@ -59,5 +59,6 @@ jobs:
         gh release create "v${NEW_VERSION}" \
           --title "finmap-mcp v${NEW_VERSION}" \
           --generate-notes \
+          --latest \
           dist/*.tgz
 
