@@ -1,13 +1,6 @@
 # Finmap MCP Server
 
-A Model Context Protocol (MCP) server that provides comprehensive financial market data from [finmap.org](https://finmap.org). Access historical market data for multiple global stock exchanges through a standardized MCP interface.
-
-## Features
-
-- **Comprehensive Data**: Market capitalization, trading volume, price changes, sector analysis
-- **Interactive Charts**: Direct links to finmap.org visualizations
-- **Both Remote & Local**: Cloudflare Workers hosted server + npm package
-- **Rich Metadata**: Company information, sector classifications, historical data
+The finmap.org MCP server provides comprehensive historical data from the US, UK, Russian and Turkish stock exchanges. Access sectors, tickers, company profiles, market cap, volume, value, and trade counts, as well as treemap and histogram visualizations.
 
 ## Supported Exchanges
 
@@ -219,6 +212,7 @@ Get detailed company information including business description (US market only)
 
 ```json
 {
+  {
     "ModuleTitle": {
       "label": "Module Title",
       "value": "Company Description"
