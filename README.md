@@ -11,15 +11,15 @@ A Model Context Protocol (MCP) server that provides comprehensive financial mark
 
 ## Supported Exchanges
 
-| Exchange | Code | Country | Earliest Data |
-|----------|------|---------|---------------|
-| Moscow Exchange | `moex` | Russia | 2011-12-19 |
-| New York Stock Exchange | `nyse` | USA | 2024-12-09 |
-| NASDAQ | `nasdaq` | USA | 2024-12-09 |
-| American Stock Exchange | `amex` | USA | 2024-12-09 |
-| All US Markets | `us-all` | USA | 2024-12-09 |
-| London Stock Exchange | `lse` | UK | 2025-02-07 |
-| Borsa Istanbul | `bist` | Turkey | 2015-11-30 |
+| Exchange | Code | Country | Earliest Data | Update Frequency |
+|----------|------|---------|---------------|------------------|
+| Moscow Exchange | `moex` | Russia | 2011-12-19 | Every 15 minutes (weekdays) |
+| New York Stock Exchange | `nyse` | United States | 2024-12-09 | Hourly (weekdays) |
+| NASDAQ Stock Market | `nasdaq` | United States | 2024-12-09 | Hourly (weekdays) |
+| American Stock Exchange | `amex` | United States | 2024-12-09 | Hourly (weekdays) |
+| US Combined (AMEX + NASDAQ + NYSE) | `us-all` | United States | 2024-12-09 | Hourly (weekdays) |
+| London Stock Exchange | `lse` | United Kingdom | 2025-02-07 | Hourly (weekdays) |
+| Borsa Istanbul | `bist` | Turkey | 2015-11-30 | Bi-monthly |
 
 ## Installation & Usage
 
