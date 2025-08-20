@@ -96,14 +96,54 @@ const EXCHANGE_TO_COUNTRY_MAP: Record<StockExchange, string> = {
 	bist: "turkey",
 };
 
-const MIN_AVAILABLE_DATES: Record<StockExchange, string> = {
-	amex: "2024-12-09",
-	nasdaq: "2024-12-09",
-	nyse: "2024-12-09",
-	"us-all": "2024-12-09",
-	lse: "2025-02-07",
-	moex: "2011-12-19",
-	bist: "2015-11-30",
+const EXCHANGE_INFO: Record<StockExchange, {
+	name: string;
+	country: string;
+	availableSince: string;
+	updateFrequency: string;
+}> = {
+	amex: {
+		name: "American Stock Exchange",
+		country: "United States",
+		availableSince: "2024-12-09",
+		updateFrequency: "Hourly (weekdays)",
+	},
+	nasdaq: {
+		name: "NASDAQ Stock Market",
+		country: "United States", 
+		availableSince: "2024-12-09",
+		updateFrequency: "Hourly (weekdays)",
+	},
+	nyse: {
+		name: "New York Stock Exchange",
+		country: "United States",
+		availableSince: "2024-12-09", 
+		updateFrequency: "Hourly (weekdays)",
+	},
+	"us-all": {
+		name: "US Combined (AMEX + NASDAQ + NYSE)",
+		country: "United States",
+		availableSince: "2024-12-09",
+		updateFrequency: "Hourly (weekdays)",
+	},
+	lse: {
+		name: "London Stock Exchange",
+		country: "United Kingdom",
+		availableSince: "2025-02-07",
+		updateFrequency: "Hourly (weekdays)",
+	},
+	moex: {
+		name: "Moscow Exchange",
+		country: "Russia",
+		availableSince: "2011-12-19",
+		updateFrequency: "Every 15 minutes (weekdays)",
+	},
+	bist: {
+		name: "Borsa Istanbul",
+		country: "Turkey",
+		availableSince: "2015-11-30",
+		updateFrequency: "Bi-monthly",
+	},
 };
 
 const commonInputSchema = {
@@ -153,7 +193,7 @@ async function fetchMarketData(
 	const response = await fetch(url);
 	if (response.status === 404) {
 		throw new Error(
-			`Not found, try another date. The date must be on or after ${MIN_AVAILABLE_DATES[stockExchange]} for ${stockExchange}`,
+			`Not found, try another date. The date must be on or after ${EXCHANGE_INFO[stockExchange].availableSince} for ${stockExchange}`,
 		);
 	}
 
@@ -178,19 +218,19 @@ async function fetchSecurityInfo(
 
 export function registerFinmapTools(server: McpServer) {
 	server.registerResource(
-		"minimum-dates",
-		"finmap://minimum-dates",
+		"exchanges-info",
+		"finmap://exchanges-info",
 		{
-			title: "Minimum date for stock exchange",
-			description: "Earliest available dates for each exchange",
+			title: "Stock exchanges information",
+			description: "Available stock exchanges with details about data availability and update frequency",
 			mimeType: "application/json",
 		},
 		async () => {
 			return {
 				contents: [
 					{
-						uri: "finmap://minimum-dates",
-						text: JSON.stringify(MIN_AVAILABLE_DATES, null, 2),
+						uri: "finmap://exchanges-info",
+						text: JSON.stringify(EXCHANGE_INFO, null, 2),
 					},
 				],
 			};
