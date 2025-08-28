@@ -43,15 +43,29 @@ interface MarketDataItem {
 	numTrades: number;
 }
 
-const STOCK_EXCHANGES = ["amex", "nasdaq", "nyse", "us-all", "lse", "moex", "bist"] as const;
+const STOCK_EXCHANGES = [
+	"amex",
+	"nasdaq",
+	"nyse",
+	"us-all",
+	"lse",
+	"moex",
+	"bist",
+] as const;
 const US_EXCHANGES = ["amex", "nasdaq", "nyse"] as const;
-const SORT_FIELDS = ["priceChangePct", "marketCap", "value", "volume", "numTrades"] as const;
+const SORT_FIELDS = [
+	"priceChangePct",
+	"marketCap",
+	"value",
+	"volume",
+	"numTrades",
+] as const;
 const SORT_ORDERS = ["asc", "desc"] as const;
 
-type StockExchange = typeof STOCK_EXCHANGES[number];
-type USExchange = typeof US_EXCHANGES[number];
-type SortField = typeof SORT_FIELDS[number];
-type SortOrder = typeof SORT_ORDERS[number];
+type StockExchange = (typeof STOCK_EXCHANGES)[number];
+type USExchange = (typeof US_EXCHANGES)[number];
+type SortField = (typeof SORT_FIELDS)[number];
+type SortOrder = (typeof SORT_ORDERS)[number];
 
 const INDICES = {
 	EXCHANGE: 0,
@@ -101,13 +115,15 @@ function createResponse(data: any) {
 }
 
 function createErrorResponse(error: unknown) {
-	return createResponse(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
+	return createResponse(
+		`ERROR: ${error instanceof Error ? error.message : String(error)}`,
+	);
 }
 
 function createCharts(exchange: string, date?: string) {
 	return {
 		histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${exchange}`,
-		treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${exchange}${date ? `&date=${date}` : ''}`,
+		treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${exchange}${date ? `&date=${date}` : ""}`,
 	};
 }
 
@@ -118,12 +134,15 @@ function createBaseResult(exchange: string, date?: string) {
 	};
 }
 
-const EXCHANGE_INFO: Record<StockExchange, {
-	name: string;
-	country: string;
-	availableSince: string;
-	updateFrequency: string;
-}> = {
+const EXCHANGE_INFO: Record<
+	StockExchange,
+	{
+		name: string;
+		country: string;
+		availableSince: string;
+		updateFrequency: string;
+	}
+> = {
 	amex: {
 		name: "American Stock Exchange",
 		country: "United States",
@@ -132,14 +151,14 @@ const EXCHANGE_INFO: Record<StockExchange, {
 	},
 	nasdaq: {
 		name: "NASDAQ Stock Market",
-		country: "United States", 
+		country: "United States",
 		availableSince: "2024-12-09",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	nyse: {
 		name: "New York Stock Exchange",
 		country: "United States",
-		availableSince: "2024-12-09", 
+		availableSince: "2024-12-09",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	"us-all": {
@@ -169,9 +188,7 @@ const EXCHANGE_INFO: Record<StockExchange, {
 };
 
 const commonInputSchema = {
-	stockExchange: z
-		.enum(STOCK_EXCHANGES)
-		.describe(`Stock exchange identifier:
+	stockExchange: z.enum(STOCK_EXCHANGES).describe(`Stock exchange identifier:
       amex - American Stock Exchange;
       nasdaq - Nasdaq;
       nyse - New York Stock Exchange;
@@ -249,7 +266,8 @@ export function registerFinmapTools(server: McpServer) {
 		"finmap://exchanges-info",
 		{
 			title: "Stock exchanges information",
-			description: "Available stock exchanges with details about data availability and update frequency",
+			description:
+				"Available stock exchanges with details about data availability and update frequency",
 			mimeType: "application/json",
 		},
 		async () => {
@@ -633,21 +651,13 @@ export function registerFinmapTools(server: McpServer) {
 			description:
 				"Get detailed information for a US company by provided ticker (NASDAQ, NYSE, AMEX only)",
 			inputSchema: {
-				exchange: z
-					.enum(US_EXCHANGES)
-					.describe("US exchange identifier"),
+				exchange: z.enum(US_EXCHANGES).describe("US exchange identifier"),
 				ticker: z
 					.string()
 					.describe("The ticker symbol to get information for. Case-sensitive"),
 			},
 		},
-		async ({
-			exchange,
-			ticker,
-		}: {
-			exchange: USExchange;
-			ticker: string;
-		}) => {
+		async ({ exchange, ticker }: { exchange: USExchange; ticker: string }) => {
 			try {
 				const securityInfo = await fetchSecurityInfo(exchange, ticker);
 

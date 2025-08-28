@@ -13,7 +13,7 @@ export class FinmapMcpServer extends McpAgent {
 	}
 }
 
-type Env = {}
+type Env = {};
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
