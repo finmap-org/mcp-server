@@ -37,8 +37,8 @@ jobs:
         NEW_VERSION=${NEW_VERSION#v}  # Remove 'v' prefix
         
         # Update TypeScript files
-        sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$NEW_VERSION\"/" src/index.ts
-        sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$NEW_VERSION\"/" src/stdio-server.ts
+        sed -i "s/version: \"[^\"]*\"/version: \"$NEW_VERSION\"/" src/index.ts
+        sed -i "s/version: \"[^\"]*\"/version: \"$NEW_VERSION\"/" src/stdio-server.ts
         
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
