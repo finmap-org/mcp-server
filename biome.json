@@ -9,7 +9,11 @@
 		"enabled": true
 	},
 	"files": {
-		"includes": ["!worker-configuration.d.ts","!dist/index.js","src/**/*"]
+		"includes": [
+			"!worker-configuration.d.ts",
+			"!dist/index.js",
+			"src/**/*"
+		]
 	},
 	"formatter": {
 		"enabled": true,

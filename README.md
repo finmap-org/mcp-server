@@ -52,7 +52,7 @@ npx finmap-mcp
   "mcpServers": {
     "finmap": {
       "command": "npx",
-      "args": ["finmap-mcp"]
+      "args": ["-y", "finmap-mcp"]
     }
   }
 }
