@@ -17,32 +17,6 @@ const INFO = {
 	feedback: "contact@finmap.org",
 };
 
-interface SectorTickerData {
-	count: number;
-	tickers: Record<string, string>;
-}
-
-interface TickersResult {
-	date: string;
-	exchange: string;
-	sector: string;
-	englishNames: boolean;
-	itemsPerSector: number;
-	sectors: Record<string, SectorTickerData>;
-}
-
-interface MarketDataItem {
-	ticker: string;
-	name: string;
-	sector: string;
-	priceLastSale: number;
-	priceChangePct: number;
-	marketCap: number;
-	volume: number;
-	value: number;
-	numTrades: number;
-}
-
 const STOCK_EXCHANGES = [
 	"amex",
 	"nasdaq",
@@ -105,12 +79,7 @@ const EXCHANGE_TO_COUNTRY_MAP: Record<StockExchange, string> = {
 
 function createResponse(data: any) {
 	return {
-		content: [
-			{
-				type: "text" as const,
-				text: JSON.stringify(data, null, 2),
-			},
-		],
+		content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
 	};
 }
 
@@ -127,11 +96,20 @@ function createCharts(exchange: string, date?: string) {
 	};
 }
 
-function createBaseResult(exchange: string, date?: string) {
-	return {
-		info: INFO,
-		charts: createCharts(exchange, date),
-	};
+function calculateMatchScore(
+	ticker: string,
+	name: string,
+	searchTerm: string,
+): number {
+	const tickerLower = ticker.toLowerCase();
+	const nameLower = name.toLowerCase();
+
+	if (tickerLower === searchTerm) return 100;
+	if (tickerLower.startsWith(searchTerm)) return 90;
+	if (tickerLower.includes(searchTerm)) return 80;
+	if (nameLower.includes(searchTerm)) return 70;
+
+	return 0;
 }
 
 const EXCHANGE_INFO: Record<
@@ -139,6 +117,7 @@ const EXCHANGE_INFO: Record<
 	{
 		name: string;
 		country: string;
+		currency: string;
 		availableSince: string;
 		updateFrequency: string;
 	}
@@ -146,56 +125,58 @@ const EXCHANGE_INFO: Record<
 	amex: {
 		name: "American Stock Exchange",
 		country: "United States",
+		currency: "USD",
 		availableSince: "2024-12-09",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	nasdaq: {
 		name: "NASDAQ Stock Market",
 		country: "United States",
+		currency: "USD",
 		availableSince: "2024-12-09",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	nyse: {
 		name: "New York Stock Exchange",
 		country: "United States",
+		currency: "USD",
 		availableSince: "2024-12-09",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	"us-all": {
 		name: "US Combined (AMEX + NASDAQ + NYSE)",
 		country: "United States",
+		currency: "USD",
 		availableSince: "2024-12-09",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	lse: {
 		name: "London Stock Exchange",
 		country: "United Kingdom",
+		currency: "GBP",
 		availableSince: "2025-02-07",
 		updateFrequency: "Hourly (weekdays)",
 	},
 	moex: {
 		name: "Moscow Exchange",
 		country: "Russia",
+		currency: "RUB",
 		availableSince: "2011-12-19",
 		updateFrequency: "Every 15 minutes (weekdays)",
 	},
 	bist: {
 		name: "Borsa Istanbul",
 		country: "Turkey",
+		currency: "TRY",
 		availableSince: "2015-11-30",
-		updateFrequency: "Bi-monthly",
+		updateFrequency: "Every two months",
 	},
 };
 
-const commonInputSchema = {
-	stockExchange: z.enum(STOCK_EXCHANGES).describe(`Stock exchange identifier:
-      amex - American Stock Exchange;
-      nasdaq - Nasdaq;
-      nyse - New York Stock Exchange;
-      us-all - AmEx, Nasdaq and NYSE combined;
-      lse - London Stock Exchange;
-      moex - Moscow Exchange;
-      bist - Borsa Istanbul (Turkish Stock Exchange)`),
+const exchangeSchema = z
+	.enum(STOCK_EXCHANGES)
+	.describe("Stock exchange: amex, nasdaq, nyse, us-all, lse, moex, bist");
+const dateSchema = {
 	year: z.number().int().min(2012).optional(),
 	month: z.number().int().min(1).max(12).optional(),
 	day: z.number().int().min(1).max(31).optional(),
@@ -261,34 +242,241 @@ async function fetchSecurityInfo(
 }
 
 export function registerFinmapTools(server: McpServer) {
-	server.registerResource(
-		"exchanges-info",
-		"finmap://exchanges-info",
+	server.registerTool(
+		"list_exchanges",
 		{
-			title: "Stock exchanges information",
+			title: "List exchanges",
 			description:
-				"Available stock exchanges with details about data availability and update frequency",
-			mimeType: "application/json",
+				"Return supported exchanges with IDs, names, country, currency, earliest available date, and update frequency.",
+			inputSchema: {},
 		},
 		async () => {
-			return {
-				contents: [
-					{
-						uri: "finmap://exchanges-info",
-						text: JSON.stringify(EXCHANGE_INFO, null, 2),
-					},
-				],
-			};
+			try {
+				const exchanges = Object.entries(EXCHANGE_INFO).map(([id, info]) => ({
+					id,
+					...info,
+				}));
+				return createResponse({ info: INFO, exchanges });
+			} catch (error) {
+				return createErrorResponse(error);
+			}
 		},
 	);
 
 	server.registerTool(
-		"get-marketdata",
+		"list_sectors",
 		{
-			title: "Get Marketdata",
+			title: "List sectors",
 			description:
-				"Get the market capitalization, volume, value and number of trades for the entire market and for each sector on a given date. If date is not provided, returns the latest available data",
-			inputSchema: commonInputSchema,
+				"List available business sectors for an exchange on a specific date, including item counts.",
+			inputSchema: { stockExchange: exchangeSchema, ...dateSchema },
+		},
+		async ({
+			stockExchange,
+			year,
+			month,
+			day,
+		}: {
+			stockExchange: StockExchange;
+			year?: number;
+			month?: number;
+			day?: number;
+		}) => {
+			try {
+				const formattedDate = getDate(year, month, day);
+				const marketDataResponse = await fetchMarketData(
+					stockExchange,
+					formattedDate,
+				);
+
+				const sectorCounts: Record<string, number> = {};
+				marketDataResponse.securities.data.forEach((item: any[]) => {
+					if (item[INDICES.TYPE] !== "sector" && item[INDICES.SECTOR]) {
+						sectorCounts[item[INDICES.SECTOR]] =
+							(sectorCounts[item[INDICES.SECTOR]] || 0) + 1;
+					}
+				});
+
+				const sectors = Object.entries(sectorCounts).map(([name, count]) => ({
+					name,
+					count,
+				}));
+				return createResponse({
+					info: INFO,
+					date: formattedDate,
+					exchange: stockExchange.toUpperCase(),
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					sectors,
+				});
+			} catch (error) {
+				return createErrorResponse(error);
+			}
+		},
+	);
+
+	server.registerTool(
+		"list_tickers",
+		{
+			title: "List tickers by sector",
+			description:
+				"Return company tickers and names for an exchange on a specific date, grouped by sector.",
+			inputSchema: {
+				stockExchange: exchangeSchema,
+				...dateSchema,
+				sector: z.string().optional().describe("Filter by specific sector"),
+				englishNames: z
+					.boolean()
+					.default(true)
+					.describe("Use English names if available"),
+			},
+		},
+		async ({
+			stockExchange,
+			year,
+			month,
+			day,
+			sector,
+			englishNames,
+		}: {
+			stockExchange: StockExchange;
+			year?: number;
+			month?: number;
+			day?: number;
+			sector?: string;
+			englishNames?: boolean;
+		}) => {
+			try {
+				const formattedDate = getDate(year, month, day);
+				const marketDataResponse = await fetchMarketData(
+					stockExchange,
+					formattedDate,
+				);
+
+				const sectorGroups: Record<
+					string,
+					Array<{ ticker: string; name: string }>
+				> = {};
+
+				marketDataResponse.securities.data.forEach((item: any[]) => {
+					if (
+						item[INDICES.TYPE] !== "sector" &&
+						item[INDICES.SECTOR] &&
+						(!sector || item[INDICES.SECTOR] === sector)
+					) {
+						const sectorName = item[INDICES.SECTOR];
+						const ticker = item[INDICES.TICKER];
+						const name = englishNames
+							? item[INDICES.NAME_ENG]
+							: item[INDICES.NAME_ORIGINAL_SHORT] || item[INDICES.NAME_ENG];
+
+						if (ticker && name) {
+							if (!sectorGroups[sectorName]) sectorGroups[sectorName] = [];
+							sectorGroups[sectorName].push({ ticker, name });
+						}
+					}
+				});
+
+				Object.values(sectorGroups).forEach((companies) => {
+					companies.sort((a, b) => a.ticker.localeCompare(b.ticker));
+				});
+
+				return createResponse({
+					info: INFO,
+					date: formattedDate,
+					exchange: stockExchange.toUpperCase(),
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					sectors: sectorGroups,
+				});
+			} catch (error) {
+				return createErrorResponse(error);
+			}
+		},
+	);
+
+	server.registerTool(
+		"search_companies",
+		{
+			title: "Search companies",
+			description:
+				"Find companies by partial name or ticker on an exchange and return best matches",
+			inputSchema: {
+				stockExchange: exchangeSchema,
+				...dateSchema,
+				query: z
+					.string()
+					.describe("Search term (partial ticker or company name)"),
+				limit: z
+					.number()
+					.int()
+					.min(1)
+					.max(50)
+					.default(10)
+					.describe("Maximum results"),
+			},
+		},
+		async ({
+			stockExchange,
+			year,
+			month,
+			day,
+			query,
+			limit,
+		}: {
+			stockExchange: StockExchange;
+			year?: number;
+			month?: number;
+			day?: number;
+			query: string;
+			limit?: number;
+		}) => {
+			try {
+				const formattedDate = getDate(year, month, day);
+				const marketDataResponse = await fetchMarketData(
+					stockExchange,
+					formattedDate,
+				);
+				const searchTerm = query.toLowerCase();
+
+				const matches = marketDataResponse.securities.data
+					.filter(
+						(item: any[]) =>
+							item[INDICES.TYPE] !== "sector" && item[INDICES.SECTOR],
+					)
+					.map((item: any[]) => ({
+						ticker: item[INDICES.TICKER],
+						name: item[INDICES.NAME_ENG],
+						sector: item[INDICES.SECTOR],
+						score: calculateMatchScore(
+							item[INDICES.TICKER],
+							item[INDICES.NAME_ENG],
+							searchTerm,
+						),
+					}))
+					.filter((match) => match.score > 0)
+					.sort((a, b) => b.score - a.score)
+					.slice(0, limit);
+
+				return createResponse({
+					info: INFO,
+					date: formattedDate,
+					exchange: stockExchange.toUpperCase(),
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					query,
+					matches,
+				});
+			} catch (error) {
+				return createErrorResponse(error);
+			}
+		},
+	);
+
+	server.registerTool(
+		"get_market_overview",
+		{
+			title: "Market overview",
+			description:
+				"Get total market cap, volume, value, and performance for an exchange on a specific date with a sector breakdown.",
+			inputSchema: { stockExchange: exchangeSchema, ...dateSchema },
 		},
 		async ({
 			stockExchange,
@@ -309,56 +497,39 @@ export function registerFinmapTools(server: McpServer) {
 				);
 
 				const sectorItems = marketDataResponse.securities.data.filter(
-					(securityItem: any) => securityItem[INDICES.TYPE] === "sector",
+					(item: any) => item[INDICES.TYPE] === "sector",
 				);
 
-				interface SectorData {
-					name: string;
-					marketCap: number;
-					marketCapChangePct: number;
-					volume: number;
-					value: number;
-					numTrades: number;
-					itemsPerSector: number;
-				}
+				let marketTotal = {};
+				const sectors: any[] = [];
 
-				const result = {
-					...createBaseResult(stockExchange, formattedDate),
-					date: formattedDate,
-					exchange: stockExchange.toUpperCase(),
-					descriptions: {
-						marketCap:
-							"Market capitalization - total value of all shares outstanding",
-						marketCapChangePct:
-							"Percentage change in market capitalization from previous period",
-						volume: "Trading volume - total number of shares traded",
-						value: "Trading value - total monetary value of shares traded",
-						numTrades: "Number of trades - total count of executed trades",
-						itemsPerSector: "Number of items in the sector",
-					},
-					marketTotal: {} as SectorData,
-					sectors: [] as SectorData[],
-				};
-
-				sectorItems.forEach((sectorItem: any) => {
-					const sectorData: SectorData = {
-						name: sectorItem[INDICES.TICKER],
-						marketCap: sectorItem[INDICES.MARKET_CAP],
-						marketCapChangePct: sectorItem[INDICES.PRICE_CHANGE_PCT],
-						volume: sectorItem[INDICES.VOLUME],
-						value: sectorItem[INDICES.VALUE],
-						numTrades: sectorItem[INDICES.NUM_TRADES],
-						itemsPerSector: sectorItem[INDICES.ITEMS_PER_SECTOR],
+				sectorItems.forEach((item: any) => {
+					const sectorData = {
+						name: item[INDICES.TICKER],
+						marketCap: item[INDICES.MARKET_CAP],
+						marketCapChangePct: item[INDICES.PRICE_CHANGE_PCT],
+						volume: item[INDICES.VOLUME],
+						value: item[INDICES.VALUE],
+						numTrades: item[INDICES.NUM_TRADES],
+						itemsPerSector: item[INDICES.ITEMS_PER_SECTOR],
 					};
 
-					if (sectorItem[INDICES.SECTOR] === "") {
-						result.marketTotal = sectorData;
+					if (item[INDICES.SECTOR] === "") {
+						marketTotal = sectorData;
 					} else {
-						result.sectors.push(sectorData);
+						sectors.push(sectorData);
 					}
 				});
 
-				return createResponse(result);
+				return createResponse({
+					info: INFO,
+					charts: createCharts(stockExchange, formattedDate),
+					date: formattedDate,
+					exchange: stockExchange.toUpperCase(),
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					marketTotal,
+					sectors,
+				});
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -366,24 +537,18 @@ export function registerFinmapTools(server: McpServer) {
 	);
 
 	server.registerTool(
-		"get-tickers",
+		"get_sectors_overview",
 		{
-			title: "Get Tickers",
+			title: "Sector performance",
 			description:
-				"Get tickers and company names on a given date. If date is not provided, returns the latest available data",
+				"Get aggregated performance metrics by sector for an exchange on a specific date.",
 			inputSchema: {
-				...commonInputSchema,
-				englishNames: z
-					.boolean()
-					.default(true)
-					.optional()
-					.describe(
-						`If false, returns the original company names instead of the English ones`,
-					),
+				stockExchange: exchangeSchema,
+				...dateSchema,
 				sector: z
 					.string()
 					.optional()
-					.describe(`If provided, filters the results to the specified sector`),
+					.describe("Get data for specific sector only"),
 			},
 		},
 		async ({
@@ -391,14 +556,12 @@ export function registerFinmapTools(server: McpServer) {
 			year,
 			month,
 			day,
-			englishNames,
 			sector,
 		}: {
 			stockExchange: StockExchange;
 			year?: number;
 			month?: number;
 			day?: number;
-			englishNames?: boolean;
 			sector?: string;
 		}) => {
 			try {
@@ -408,66 +571,30 @@ export function registerFinmapTools(server: McpServer) {
 					formattedDate,
 				);
 
-				const tickersResult: TickersResult = {
+				const sectors = marketDataResponse.securities.data
+					.filter(
+						(item: any) =>
+							item[INDICES.TYPE] === "sector" && item[INDICES.SECTOR] !== "",
+					)
+					.filter((item: any) => !sector || item[INDICES.TICKER] === sector)
+					.map((item: any) => ({
+						name: item[INDICES.TICKER],
+						marketCap: item[INDICES.MARKET_CAP],
+						marketCapChangePct: item[INDICES.PRICE_CHANGE_PCT],
+						volume: item[INDICES.VOLUME],
+						value: item[INDICES.VALUE],
+						numTrades: item[INDICES.NUM_TRADES],
+						itemsPerSector: item[INDICES.ITEMS_PER_SECTOR],
+					}));
+
+				return createResponse({
+					info: INFO,
+					charts: createCharts(stockExchange, formattedDate),
 					date: formattedDate,
 					exchange: stockExchange.toUpperCase(),
-					sector: sector || "all",
-					englishNames: englishNames ?? true,
-					itemsPerSector: 0,
-					sectors: {},
-				};
-
-				const result = {
-					...createBaseResult(stockExchange, formattedDate),
-					...tickersResult,
-				};
-
-				const filteredSecurities = marketDataResponse.securities.data.filter(
-					(securityItem: any[]) =>
-						securityItem[INDICES.TYPE] !== "sector" &&
-						securityItem[INDICES.SECTOR] !== "" &&
-						(!sector || securityItem[INDICES.SECTOR] === sector),
-				);
-
-				const groupedBySector = filteredSecurities.reduce(
-					(accumulator: Record<string, any[]>, securityItem: any[]) => {
-						const sectorName = securityItem[INDICES.SECTOR];
-						if (!accumulator[sectorName]) accumulator[sectorName] = [];
-						accumulator[sectorName].push(securityItem);
-						return accumulator;
-					},
-					{},
-				);
-
-				for (const [sectorName, sectorSecurities] of Object.entries(
-					groupedBySector,
-				)) {
-					const validTickerPairs = (sectorSecurities as any[])
-						.map((securityItem: any[]) => {
-							const ticker = securityItem[INDICES.TICKER];
-							const companyName = englishNames
-								? securityItem[INDICES.NAME_ENG]
-								: securityItem[INDICES.NAME_ORIGINAL_SHORT] ||
-									securityItem[INDICES.NAME_ENG];
-							return ticker && companyName
-								? ([ticker, companyName] as [string, string])
-								: null;
-						})
-						.filter((entry): entry is [string, string] => entry !== null)
-						.sort(([a], [b]) => a.localeCompare(b));
-
-					const tickersMap = Object.fromEntries(validTickerPairs);
-
-					if (Object.keys(tickersMap).length > 0) {
-						result.sectors[sectorName] = {
-							count: Object.keys(tickersMap).length,
-							tickers: tickersMap,
-						};
-						result.itemsPerSector += Object.keys(tickersMap).length;
-					}
-				}
-
-				return createResponse(result);
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					sectors,
+				});
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -475,15 +602,15 @@ export function registerFinmapTools(server: McpServer) {
 	);
 
 	server.registerTool(
-		"get-marketdata-by-ticker",
+		"get_stock_data",
 		{
-			title: "Get Market Data by Ticker",
-			description: "Get market data for a specific ticker on a given date",
+			title: "Stock data by ticker",
+			description:
+				"Get detailed market data for a specific ticker on an exchange and date, including price, change, volume, value, market cap, and trades.",
 			inputSchema: {
-				...commonInputSchema,
-				ticker: z
-					.string()
-					.describe("The ticker symbol to get market data for. Case-sensitive"),
+				stockExchange: exchangeSchema,
+				...dateSchema,
+				ticker: z.string().describe("Stock ticker symbol (case-sensitive)"),
 			},
 		},
 		async ({
@@ -506,46 +633,37 @@ export function registerFinmapTools(server: McpServer) {
 					formattedDate,
 				);
 
-				const marketData = marketDataResponse.securities.data.find(
-					(securityItem: any[]) =>
-						securityItem[INDICES.TYPE] !== "sector" &&
-						securityItem[INDICES.TICKER] === ticker,
+				const stockData = marketDataResponse.securities.data.find(
+					(item: any[]) =>
+						item[INDICES.TYPE] !== "sector" && item[INDICES.TICKER] === ticker,
 				);
 
-				if (!marketData) {
+				if (!stockData) {
 					throw new Error(
 						`Ticker ${ticker} not found on ${stockExchange} for date ${formattedDate}`,
 					);
 				}
 
-				const result = {
-					...createBaseResult(stockExchange, formattedDate),
-					exchange: marketData[INDICES.EXCHANGE],
-					country: marketData[INDICES.COUNTRY],
-					type: marketData[INDICES.TYPE],
-					sector: marketData[INDICES.SECTOR],
-					industry: marketData[INDICES.INDUSTRY],
-					currencyId: marketData[INDICES.CURRENCY_ID],
-					ticker: marketData[INDICES.TICKER],
-					nameEng: marketData[INDICES.NAME_ENG],
-					nameEngShort: marketData[INDICES.NAME_ENG_SHORT],
-					nameOriginal: marketData[INDICES.NAME_ORIGINAL],
-					nameOriginalShort: marketData[INDICES.NAME_ORIGINAL_SHORT],
-					priceOpen: marketData[INDICES.PRICE_OPEN],
-					priceLastSale: marketData[INDICES.PRICE_LAST_SALE],
-					priceChangePct: marketData[INDICES.PRICE_CHANGE_PCT],
-					volume: marketData[INDICES.VOLUME],
-					value: marketData[INDICES.VALUE],
-					numTrades: marketData[INDICES.NUM_TRADES],
-					marketCap: marketData[INDICES.MARKET_CAP],
-					listedFrom: marketData[INDICES.LISTED_FROM],
-					listedTill: marketData[INDICES.LISTED_TILL],
-					wikiPageIdEng: marketData[INDICES.WIKI_PAGE_ID_ENG],
-					wikiPageIdOriginal: marketData[INDICES.WIKI_PAGE_ID_ORIGINAL],
-					itemsPerSector: marketData[INDICES.ITEMS_PER_SECTOR],
-				};
-
-				return createResponse(result);
+				return createResponse({
+					info: INFO,
+					charts: createCharts(stockExchange, formattedDate),
+					exchange: stockData[INDICES.EXCHANGE],
+					country: stockData[INDICES.COUNTRY],
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					sector: stockData[INDICES.SECTOR],
+					ticker: stockData[INDICES.TICKER],
+					nameEng: stockData[INDICES.NAME_ENG],
+					nameOriginal: stockData[INDICES.NAME_ORIGINAL],
+					priceOpen: stockData[INDICES.PRICE_OPEN],
+					priceLastSale: stockData[INDICES.PRICE_LAST_SALE],
+					priceChangePct: stockData[INDICES.PRICE_CHANGE_PCT],
+					volume: stockData[INDICES.VOLUME],
+					value: stockData[INDICES.VALUE],
+					numTrades: stockData[INDICES.NUM_TRADES],
+					marketCap: stockData[INDICES.MARKET_CAP],
+					listedFrom: stockData[INDICES.LISTED_FROM],
+					listedTill: stockData[INDICES.LISTED_TILL],
+				});
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -553,29 +671,31 @@ export function registerFinmapTools(server: McpServer) {
 	);
 
 	server.registerTool(
-		"get-top-marketdata",
+		"rank_stocks",
 		{
-			title: "Get Top Market Data",
+			title: "Rank stocks",
 			description:
-				"Get top N market data items sorted by specified field and order. Excludes sector-level data",
+				"Rank stocks on an exchange by a chosen metric (marketCap, priceChangePct, volume, value, numTrades) for a specific date with order and limit.",
 			inputSchema: {
-				...commonInputSchema,
+				stockExchange: exchangeSchema,
+				...dateSchema,
 				sortBy: z
 					.enum(SORT_FIELDS)
-					.describe(`marketCap: Market capitalization - total value of all shares outstanding;
-              priceChangePct: Percentage change in share price from previous trading session;
-              volume: Trading volume - total number of shares traded;
-              value: Trading value - total monetary value of shares traded;
-              numTrades: Number of trades - total count of executed trades;
-              itemsPerSector: Number of items in the sector`),
-				order: z.enum(SORT_ORDERS).default("desc").describe("Sort order"),
+					.describe(
+						"Sort by: marketCap, priceChangePct, volume, value, numTrades",
+					),
+				order: z
+					.enum(SORT_ORDERS)
+					.default("desc")
+					.describe("Sort order: asc or desc"),
 				limit: z
 					.number()
 					.int()
 					.min(1)
 					.max(500)
 					.default(10)
-					.describe("Number of items to return"),
+					.describe("Number of results"),
+				sector: z.string().optional().describe("Filter by specific sector"),
 			},
 		},
 		async ({
@@ -586,6 +706,7 @@ export function registerFinmapTools(server: McpServer) {
 			sortBy,
 			order,
 			limit,
+			sector,
 		}: {
 			stockExchange: StockExchange;
 			year?: number;
@@ -594,6 +715,7 @@ export function registerFinmapTools(server: McpServer) {
 			sortBy: SortField;
 			order?: SortOrder;
 			limit?: number;
+			sector?: string;
 		}) => {
 			try {
 				const formattedDate = getDate(year, month, day);
@@ -602,42 +724,42 @@ export function registerFinmapTools(server: McpServer) {
 					formattedDate,
 				);
 
-				const filteredSecurities = marketDataResponse.securities.data
+				const stocks = marketDataResponse.securities.data
 					.filter(
-						(securityItem: any[]) =>
-							securityItem[INDICES.TYPE] !== "sector" &&
-							securityItem[INDICES.SECTOR] !== "",
+						(item: any[]) =>
+							item[INDICES.TYPE] !== "sector" && item[INDICES.SECTOR] !== "",
 					)
-					.map((securityItem: any[]) => ({
-						ticker: securityItem[INDICES.TICKER],
-						name: securityItem[INDICES.NAME_ENG],
-						sector: securityItem[INDICES.SECTOR],
-						priceLastSale: securityItem[INDICES.PRICE_LAST_SALE],
-						priceChangePct: securityItem[INDICES.PRICE_CHANGE_PCT],
-						marketCap: securityItem[INDICES.MARKET_CAP],
-						volume: securityItem[INDICES.VOLUME],
-						value: securityItem[INDICES.VALUE],
-						numTrades: securityItem[INDICES.NUM_TRADES],
+					.filter((item: any[]) => !sector || item[INDICES.SECTOR] === sector)
+					.map((item: any[]) => ({
+						ticker: item[INDICES.TICKER],
+						name: item[INDICES.NAME_ENG],
+						sector: item[INDICES.SECTOR],
+						priceLastSale: item[INDICES.PRICE_LAST_SALE],
+						priceChangePct: item[INDICES.PRICE_CHANGE_PCT],
+						marketCap: item[INDICES.MARKET_CAP],
+						volume: item[INDICES.VOLUME],
+						value: item[INDICES.VALUE],
+						numTrades: item[INDICES.NUM_TRADES],
 					}))
-					.sort((a: MarketDataItem, b: MarketDataItem) => {
-						const aVal = a[sortBy];
-						const bVal = b[sortBy];
+					.sort((a: any, b: any) => {
+						const aVal = a[sortBy],
+							bVal = b[sortBy];
 						return order === "desc" ? bVal - aVal : aVal - bVal;
 					})
-					.slice(0, limit || 10);
+					.slice(0, limit);
 
-				const result = {
-					...createBaseResult(stockExchange, formattedDate),
+				return createResponse({
+					info: INFO,
+					charts: createCharts(stockExchange, formattedDate),
 					date: formattedDate,
 					exchange: stockExchange.toUpperCase(),
-					sortBy: sortBy,
-					order: order || "desc",
-					limit: limit || 10,
-					count: filteredSecurities.length,
-					filteredSecurities,
-				};
-
-				return createResponse(result);
+					currency: EXCHANGE_INFO[stockExchange as StockExchange].currency,
+					sortBy,
+					order,
+					limit,
+					count: stocks.length,
+					stocks,
+				});
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -645,28 +767,26 @@ export function registerFinmapTools(server: McpServer) {
 	);
 
 	server.registerTool(
-		"get-company-info",
+		"get_company_profile",
 		{
-			title: "Get Company Description",
+			title: "Company profile (US)",
 			description:
-				"Get detailed information for a US company by provided ticker (NASDAQ, NYSE, AMEX only)",
+				"Get business description, industry, and background for a US-listed company by ticker.",
 			inputSchema: {
-				exchange: z.enum(US_EXCHANGES).describe("US exchange identifier"),
-				ticker: z
-					.string()
-					.describe("The ticker symbol to get information for. Case-sensitive"),
+				exchange: z
+					.enum(US_EXCHANGES)
+					.describe("US exchange: amex, nasdaq, nyse"),
+				ticker: z.string().describe("Stock ticker symbol (case-sensitive)"),
 			},
 		},
 		async ({ exchange, ticker }: { exchange: USExchange; ticker: string }) => {
 			try {
 				const securityInfo = await fetchSecurityInfo(exchange, ticker);
-
-				const result = {
-					...createBaseResult(exchange),
+				return createResponse({
+					info: INFO,
+					charts: createCharts(exchange),
 					...securityInfo,
-				};
-
-				return createResponse(result);
+				});
 			} catch (error) {
 				return createErrorResponse(error);
 			}
