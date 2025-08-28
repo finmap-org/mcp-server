@@ -107,7 +107,7 @@ function createResponse(data: any) {
 	return {
 		content: [
 			{
-				type: "text",
+				type: "text" as const,
 				text: JSON.stringify(data, null, 2),
 			},
 		],
