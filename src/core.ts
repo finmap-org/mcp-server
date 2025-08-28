@@ -299,7 +299,7 @@ export function registerFinmapTools(server: McpServer) {
 
 				const sectors = Object.entries(sectorCounts).map(([name, count]) => ({
 					name,
-					count,
+					itemsPerSector: count,
 				}));
 				return createResponse({
 					info: INFO,
