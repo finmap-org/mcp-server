@@ -5,7 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 
 const server = new McpServer({
 	name: "finmap-mcp",
-	version: "1.0.0",
+	version: "1.1.0",
 });
 
 registerFinmapTools(server);
