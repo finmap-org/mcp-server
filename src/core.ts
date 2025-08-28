@@ -43,22 +43,15 @@ interface MarketDataItem {
 	numTrades: number;
 }
 
-type StockExchange =
-	| "amex"
-	| "nasdaq"
-	| "nyse"
-	| "us-all"
-	| "lse"
-	| "moex"
-	| "bist";
-type USExchange = "amex" | "nasdaq" | "nyse";
-type SortField =
-	| "priceChangePct"
-	| "marketCap"
-	| "value"
-	| "volume"
-	| "numTrades";
-type SortOrder = "asc" | "desc";
+const STOCK_EXCHANGES = ["amex", "nasdaq", "nyse", "us-all", "lse", "moex", "bist"] as const;
+const US_EXCHANGES = ["amex", "nasdaq", "nyse"] as const;
+const SORT_FIELDS = ["priceChangePct", "marketCap", "value", "volume", "numTrades"] as const;
+const SORT_ORDERS = ["asc", "desc"] as const;
+
+type StockExchange = typeof STOCK_EXCHANGES[number];
+type USExchange = typeof US_EXCHANGES[number];
+type SortField = typeof SORT_FIELDS[number];
+type SortOrder = typeof SORT_ORDERS[number];
 
 const INDICES = {
 	EXCHANGE: 0,
@@ -95,6 +88,35 @@ const EXCHANGE_TO_COUNTRY_MAP: Record<StockExchange, string> = {
 	moex: "russia",
 	bist: "turkey",
 };
+
+function createResponse(data: any) {
+	return {
+		content: [
+			{
+				type: "text",
+				text: JSON.stringify(data, null, 2),
+			},
+		],
+	};
+}
+
+function createErrorResponse(error: unknown) {
+	return createResponse(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
+}
+
+function createCharts(exchange: string, date?: string) {
+	return {
+		histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${exchange}`,
+		treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${exchange}${date ? `&date=${date}` : ''}`,
+	};
+}
+
+function createBaseResult(exchange: string, date?: string) {
+	return {
+		info: INFO,
+		charts: createCharts(exchange, date),
+	};
+}
 
 const EXCHANGE_INFO: Record<StockExchange, {
 	name: string;
@@ -148,7 +170,7 @@ const EXCHANGE_INFO: Record<StockExchange, {
 
 const commonInputSchema = {
 	stockExchange: z
-		.enum(["amex", "nasdaq", "nyse", "us-all", "lse", "moex", "bist"])
+		.enum(STOCK_EXCHANGES)
 		.describe(`Stock exchange identifier:
       amex - American Stock Exchange;
       nasdaq - Nasdaq;
@@ -185,7 +207,7 @@ function validateAndFormatDate(dateString: string): string {
 async function fetchMarketData(
 	stockExchange: StockExchange,
 	formattedDate: string,
-): Promise<any> {
+): Promise<{ securities: { data: any[][] } }> {
 	const country = EXCHANGE_TO_COUNTRY_MAP[stockExchange];
 	const date = formattedDate.replaceAll("-", "/");
 	const url = `${DATA_BASE_URL}/data-${country}/refs/heads/main/marketdata/${date}/${stockExchange}.json`;
@@ -203,7 +225,7 @@ async function fetchMarketData(
 async function fetchSecurityInfo(
 	exchange: USExchange,
 	ticker: string,
-): Promise<any> {
+): Promise<Record<string, any>> {
 	const firstLetter = ticker.charAt(0).toUpperCase();
 	const url = `${DATA_BASE_URL}/data-us/refs/heads/main/securities/${exchange}/${firstLetter}/${ticker}.json`;
 
@@ -279,11 +301,7 @@ export function registerFinmapTools(server: McpServer) {
 				}
 
 				const result = {
-					info: INFO,
-					charts: {
-						histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${stockExchange}`,
-						treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${stockExchange}&date=${formattedDate}`,
-					},
+					...createBaseResult(stockExchange, formattedDate),
 					date: formattedDate,
 					exchange: stockExchange.toUpperCase(),
 					descriptions: {
@@ -318,23 +336,9 @@ export function registerFinmapTools(server: McpServer) {
 					}
 				});
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify(result, null, 2),
-						},
-					],
-				};
+				return createResponse(result);
 			} catch (error) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `ERROR: ${error instanceof Error ? error.message : String(error)}`,
-						},
-					],
-				};
+				return createErrorResponse(error);
 			}
 		},
 	);
@@ -393,11 +397,7 @@ export function registerFinmapTools(server: McpServer) {
 				};
 
 				const result = {
-					info: INFO,
-					charts: {
-						histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${stockExchange}`,
-						treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${stockExchange}&date=${formattedDate}`,
-					},
+					...createBaseResult(stockExchange, formattedDate),
 					...tickersResult,
 				};
 
@@ -446,23 +446,9 @@ export function registerFinmapTools(server: McpServer) {
 					}
 				}
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify(result, null, 2),
-						},
-					],
-				};
+				return createResponse(result);
 			} catch (error) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `ERROR: ${error instanceof Error ? error.message : String(error)}`,
-						},
-					],
-				};
+				return createErrorResponse(error);
 			}
 		},
 	);
@@ -513,11 +499,7 @@ export function registerFinmapTools(server: McpServer) {
 				}
 
 				const result = {
-					info: INFO,
-					charts: {
-						histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${stockExchange}`,
-						treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${stockExchange}&date=${formattedDate}`,
-					},
+					...createBaseResult(stockExchange, formattedDate),
 					exchange: marketData[INDICES.EXCHANGE],
 					country: marketData[INDICES.COUNTRY],
 					type: marketData[INDICES.TYPE],
@@ -543,23 +525,9 @@ export function registerFinmapTools(server: McpServer) {
 					itemsPerSector: marketData[INDICES.ITEMS_PER_SECTOR],
 				};
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify(result, null, 2),
-						},
-					],
-				};
+				return createResponse(result);
 			} catch (error) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `ERROR: ${error instanceof Error ? error.message : String(error)}`,
-						},
-					],
-				};
+				return createErrorResponse(error);
 			}
 		},
 	);
@@ -573,14 +541,14 @@ export function registerFinmapTools(server: McpServer) {
 			inputSchema: {
 				...commonInputSchema,
 				sortBy: z
-					.enum(["priceChangePct", "marketCap", "value", "volume", "numTrades"])
+					.enum(SORT_FIELDS)
 					.describe(`marketCap: Market capitalization - total value of all shares outstanding;
               priceChangePct: Percentage change in share price from previous trading session;
               volume: Trading volume - total number of shares traded;
               value: Trading value - total monetary value of shares traded;
               numTrades: Number of trades - total count of executed trades;
               itemsPerSector: Number of items in the sector`),
-				order: z.enum(["asc", "desc"]).default("desc").describe("Sort order"),
+				order: z.enum(SORT_ORDERS).default("desc").describe("Sort order"),
 				limit: z
 					.number()
 					.int()
@@ -640,11 +608,7 @@ export function registerFinmapTools(server: McpServer) {
 					.slice(0, limit || 10);
 
 				const result = {
-					info: INFO,
-					charts: {
-						histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${stockExchange}`,
-						treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${stockExchange}&date=${formattedDate}`,
-					},
+					...createBaseResult(stockExchange, formattedDate),
 					date: formattedDate,
 					exchange: stockExchange.toUpperCase(),
 					sortBy: sortBy,
@@ -654,23 +618,9 @@ export function registerFinmapTools(server: McpServer) {
 					filteredSecurities,
 				};
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify(result, null, 2),
-						},
-					],
-				};
+				return createResponse(result);
 			} catch (error) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `ERROR: ${error instanceof Error ? error.message : String(error)}`,
-						},
-					],
-				};
+				return createErrorResponse(error);
 			}
 		},
 	);
@@ -683,7 +633,7 @@ export function registerFinmapTools(server: McpServer) {
 				"Get detailed information for a US company by provided ticker (NASDAQ, NYSE, AMEX only)",
 			inputSchema: {
 				exchange: z
-					.enum(["nasdaq", "nyse", "amex"])
+					.enum(US_EXCHANGES)
 					.describe("US exchange identifier"),
 				ticker: z
 					.string()
@@ -701,31 +651,13 @@ export function registerFinmapTools(server: McpServer) {
 				const securityInfo = await fetchSecurityInfo(exchange, ticker);
 
 				const result = {
-					info: INFO,
-					charts: {
-						histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${exchange}`,
-						treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${exchange}`,
-					},
+					...createBaseResult(exchange),
 					...securityInfo,
 				};
 
-				return {
-					content: [
-						{
-							type: "text",
-							text: JSON.stringify(result, null, 2),
-						},
-					],
-				};
+				return createResponse(result);
 			} catch (error) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `ERROR: ${error instanceof Error ? error.message : String(error)}`,
-						},
-					],
-				};
+				return createErrorResponse(error);
 			}
 		},
 	);
