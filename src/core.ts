@@ -193,15 +193,20 @@ function buildDateString(year?: number, month?: number, day?: number): string {
 }
 
 function validateAndFormatDate(dateString: string): string {
-	const formattedDate = dateString.replaceAll("/", "-");
-	z.string().date().parse(formattedDate);
+	const date = dateString.replaceAll("/", "-");
+	z.string().date().parse(date);
 
-	const dayOfWeek = new Date(formattedDate).getDay();
+	const dayOfWeek = new Date(date).getDay();
 	if (dayOfWeek === 0 || dayOfWeek === 6) {
 		throw new Error("Data is only available for work days (Monday to Friday)");
 	}
 
-	return formattedDate;
+	return date;
+}
+
+function getDate(year?: number, month?: number, day?: number): string {
+	const dateString = buildDateString(year, month, day);
+	return validateAndFormatDate(dateString);
 }
 
 async function fetchMarketData(
@@ -279,8 +284,7 @@ export function registerFinmapTools(server: McpServer) {
 			day?: number;
 		}) => {
 			try {
-				const dateString = buildDateString(year, month, day);
-				const formattedDate = validateAndFormatDate(dateString);
+				const formattedDate = getDate(year, month, day);
 				const marketDataResponse = await fetchMarketData(
 					stockExchange,
 					formattedDate,
@@ -380,8 +384,7 @@ export function registerFinmapTools(server: McpServer) {
 			sector?: string;
 		}) => {
 			try {
-				const dateString = buildDateString(year, month, day);
-				const formattedDate = validateAndFormatDate(dateString);
+				const formattedDate = getDate(year, month, day);
 				const marketDataResponse = await fetchMarketData(
 					stockExchange,
 					formattedDate,
@@ -479,8 +482,7 @@ export function registerFinmapTools(server: McpServer) {
 			ticker: string;
 		}) => {
 			try {
-				const dateString = buildDateString(year, month, day);
-				const formattedDate = validateAndFormatDate(dateString);
+				const formattedDate = getDate(year, month, day);
 				const marketDataResponse = await fetchMarketData(
 					stockExchange,
 					formattedDate,
@@ -576,8 +578,7 @@ export function registerFinmapTools(server: McpServer) {
 			limit?: number;
 		}) => {
 			try {
-				const dateString = buildDateString(year, month, day);
-				const formattedDate = validateAndFormatDate(dateString);
+				const formattedDate = getDate(year, month, day);
 				const marketDataResponse = await fetchMarketData(
 					stockExchange,
 					formattedDate,
