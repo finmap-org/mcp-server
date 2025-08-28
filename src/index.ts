@@ -5,7 +5,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 export class FinmapMcpServer extends McpAgent {
 	server = new McpServer({
 		name: "finmap-mcp",
-		version: "1.1.0",
+		version: "1.1.1",
 	});
 
 	async init() {
