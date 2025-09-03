@@ -91,8 +91,8 @@ function createErrorResponse(error: unknown) {
 
 function createCharts(exchange: string, date?: string) {
 	return {
-		histogram: `${BASE_URL}/?chartType=histogram&dataType=marketcap&exchange=${exchange}`,
-		treemap: `${BASE_URL}/?chartType=treemap&dataType=marketcap&exchange=${exchange}${date ? `&date=${date}` : ""}`,
+		histogram: `${BASE_URL}/?chart=histogram&data=marketcap&currency=USD&exchange=${exchange}`,
+		treemap: `${BASE_URL}/?chart=treemap&data=marketcap&currency=USD&exchange=${exchange}${date ? `&date=${date.replaceAll("-", "/")}` : ""}`,
 	};
 }
 
