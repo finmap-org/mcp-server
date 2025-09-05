@@ -78,11 +78,11 @@
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.2",
-		"@types/node": "^24.3.0",
+		"@biomejs/biome": "^2.2.3",
+		"@types/node": "^24.3.1",
 		"rimraf": "^6.0.1",
 		"tsx": "^4.20.5",
 		"typescript": "5.9.2",
-		"wrangler": "^4.33.2"
+		"wrangler": "^4.34.0"
 	}
 }
