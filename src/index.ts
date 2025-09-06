@@ -25,9 +25,9 @@ export default {
 				status: 200,
 				headers: {
 					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+					"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 					"Access-Control-Allow-Headers":
-						"Content-Type, Authorization, mcp-session-id",
+						"Content-Type, Authorization, mcp-session-id, mcp-protocol-version, Last-Event-ID",
 					"Access-Control-Max-Age": "86400",
 				},
 			});
@@ -43,12 +43,12 @@ export default {
 			// Add CORS headers to response
 			const newHeaders = new Headers(response.headers);
 			newHeaders.set("Access-Control-Allow-Origin", "*");
-			newHeaders.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+			newHeaders.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
 			newHeaders.set(
 				"Access-Control-Allow-Headers",
-				"Content-Type, Authorization, mcp-session-id",
+				"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, Last-Event-ID",
 			);
-			newHeaders.set("Access-Control-Expose-Headers", "Mcp-Session-Id");
+			newHeaders.set("Access-Control-Expose-Headers", "Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version");
 
 			return new Response(response.body, {
 				status: response.status,
