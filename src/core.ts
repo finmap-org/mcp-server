@@ -177,7 +177,7 @@ const EXCHANGE_INFO: Record<
 		name: "Hong Kong Stock Exchange",
 		country: "Hong Kong",
 		currency: "HKD",
-		availableSince: "2025-09-26",
+		availableSince: "2025-09-29",
 		updateFrequency: "Every 30 minutes (weekdays)",
 	},
 };
