@@ -25,6 +25,7 @@ const STOCK_EXCHANGES = [
 	"lse",
 	"moex",
 	"bist",
+	"hkex",
 ] as const;
 const US_EXCHANGES = ["amex", "nasdaq", "nyse"] as const;
 const SORT_FIELDS = [
@@ -75,6 +76,7 @@ const EXCHANGE_TO_COUNTRY_MAP: Record<StockExchange, string> = {
 	lse: "uk",
 	moex: "russia",
 	bist: "turkey",
+	hkex: "hongkong",
 };
 
 function createResponse(data: any) {
@@ -171,11 +173,18 @@ const EXCHANGE_INFO: Record<
 		availableSince: "2015-11-30",
 		updateFrequency: "Every two months",
 	},
+	hkex: {
+		name: "Hong Kong Stock Exchange",
+		country: "Hong Kong",
+		currency: "HKD",
+		availableSince: "2025-09-29",
+		updateFrequency: "Every 30 minutes (weekdays)",
+	},
 };
 
 const exchangeSchema = z
 	.enum(STOCK_EXCHANGES)
-	.describe("Stock exchange: amex, nasdaq, nyse, us-all, lse, moex, bist");
+	.describe("Stock exchange: amex, nasdaq, nyse, us-all, lse, moex, bist, hkex");
 const dateSchema = {
 	year: z.number().int().min(2012).optional(),
 	month: z.number().int().min(1).max(12).optional(),
