@@ -6,13 +6,14 @@ The finmap.org MCP server provides comprehensive historical data from the US, UK
 
 | Exchange | Code | Country | Earliest Data | Update Frequency |
 |----------|------|---------|---------------|------------------|
-| Moscow Exchange | `moex` | Russia | 2011-12-19 | Every 15 minutes (weekdays) |
 | New York Stock Exchange | `nyse` | United States | 2024-12-09 | Hourly (weekdays) |
 | NASDAQ Stock Market | `nasdaq` | United States | 2024-12-09 | Hourly (weekdays) |
 | American Stock Exchange | `amex` | United States | 2024-12-09 | Hourly (weekdays) |
 | US Combined (AMEX + NASDAQ + NYSE) | `us-all` | United States | 2024-12-09 | Hourly (weekdays) |
 | London Stock Exchange | `lse` | United Kingdom | 2025-02-07 | Hourly (weekdays) |
-| Borsa Istanbul | `bist` | Turkey | 2015-11-30 | Bi-monthly |
+| Hong Kong Stock Exchange | `hkex` | Hong Kong | 2025-09-26 | Every 30 minutes (weekdays) |
+| Borsa Istanbul | `bist` | Turkey | 2015-11-30 | Every two months |
+| Moscow Exchange | `moex` | Russia | 2011-12-19 | Every 15 minutes (weekdays) |
 
 ## Installation & Usage
 
@@ -125,6 +126,14 @@ npx finmap-mcp
         "currency": "TRY",
         "availableSince": "2015-11-30",
         "updateFrequency": "Every two months"
+      },
+      {
+        "id": "hkex",
+        "name": "Hong Kong Stock Exchange",
+        "country": "Hong Kong",
+        "currency": "HKD",
+        "availableSince": "2025-09-26",
+        "updateFrequency": "Every 30 minutes (weekdays)"
       }
     ]
   }
