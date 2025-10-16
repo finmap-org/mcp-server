@@ -6,10 +6,10 @@ The finmap.org MCP server provides comprehensive historical data from the US, UK
 
 | Exchange | Code | Country | Earliest Data | Update Frequency |
 |----------|------|---------|---------------|------------------|
-| New York Stock Exchange | `nyse` | United States | 2024-12-09 | Hourly (weekdays) |
-| NASDAQ Stock Market | `nasdaq` | United States | 2024-12-09 | Hourly (weekdays) |
-| American Stock Exchange | `amex` | United States | 2024-12-09 | Hourly (weekdays) |
-| US Combined (AMEX + NASDAQ + NYSE) | `us-all` | United States | 2024-12-09 | Hourly (weekdays) |
+| New York Stock Exchange | `nyse` | United States | 2024-12-09 | Daily |
+| NASDAQ Stock Market | `nasdaq` | United States | 2024-12-09 | Daily |
+| American Stock Exchange | `amex` | United States | 2024-12-09 | Daily |
+| US Combined (AMEX + NASDAQ + NYSE) | `us-all` | United States | 2024-12-09 | Daily |
 | London Stock Exchange | `lse` | United Kingdom | 2025-02-07 | Hourly (weekdays) |
 | Hong Kong Stock Exchange | `hkex` | Hong Kong | 2025-09-26 | Every 30 minutes (weekdays) |
 | Borsa Istanbul | `bist` | Turkey | 2015-11-30 | Every two months |
