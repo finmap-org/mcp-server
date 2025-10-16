@@ -77,7 +77,7 @@ npx finmap-mcp
         "country": "United States",
         "currency": "USD",
         "availableSince": "2024-12-09",
-        "updateFrequency": "Hourly (weekdays)"
+        "updateFrequency": "Daily"
       },
       {
         "id": "nasdaq",
@@ -85,7 +85,7 @@ npx finmap-mcp
         "country": "United States",
         "currency": "USD",
         "availableSince": "2024-12-09",
-        "updateFrequency": "Hourly (weekdays)"
+        "updateFrequency": "Daily"
       },
       {
         "id": "nyse",
@@ -93,7 +93,7 @@ npx finmap-mcp
         "country": "United States",
         "currency": "USD",
         "availableSince": "2024-12-09",
-        "updateFrequency": "Hourly (weekdays)"
+        "updateFrequency": "Daily"
       },
       {
         "id": "us-all",
@@ -101,7 +101,7 @@ npx finmap-mcp
         "country": "United States",
         "currency": "USD",
         "availableSince": "2024-12-09",
-        "updateFrequency": "Hourly (weekdays)"
+        "updateFrequency": "Daily"
       },
       {
         "id": "lse",
