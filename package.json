@@ -73,7 +73,6 @@
 		"package": "npm run build:stdio && npm pack --pack-destination dist"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "1.25.3",
 		"agents": "^0.3.6",
 		"zod": "^4.3.5"
 	},
