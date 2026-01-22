@@ -184,7 +184,9 @@ const EXCHANGE_INFO: Record<
 
 const exchangeSchema = z
 	.enum(STOCK_EXCHANGES)
-	.describe("Stock exchange: amex, nasdaq, nyse, us-all, lse, moex, bist, hkex");
+	.describe(
+		"Stock exchange: amex, nasdaq, nyse, us-all, lse, moex, bist, hkex",
+	);
 const dateSchema = {
 	year: z.number().int().min(2012).optional(),
 	month: z.number().int().min(1).max(12).optional(),

@@ -44,46 +44,52 @@ export default {
 					const encoder = new TextEncoder();
 
 					// Handle server side event stream
-					ctx.waitUntil((async () => {
-						const server = await FinmapMcpServer.serve("/");
-						
-						// Keep connection alive and allow server to send events
-						while (true) {
-							await new Promise(resolve => setTimeout(resolve, 1000));
-							try {
-								await writer.write(encoder.encode(":\n\n")); // Keep-alive ping
-							} catch (e) {
-								break; // Client disconnected
+					ctx.waitUntil(
+						(async () => {
+							const server = await FinmapMcpServer.serve("/");
+
+							// Keep connection alive and allow server to send events
+							while (true) {
+								await new Promise((resolve) => setTimeout(resolve, 1000));
+								try {
+									await writer.write(encoder.encode(":\n\n")); // Keep-alive ping
+								} catch (e) {
+									break; // Client disconnected
+								}
 							}
-						}
-					})());
+						})(),
+					);
 
 					return new Response(readable, {
 						headers: {
 							"Content-Type": "text/event-stream",
 							"Cache-Control": "no-cache",
-							"Connection": "keep-alive",
+							Connection: "keep-alive",
 							"Access-Control-Allow-Origin": "*",
-							"Access-Control-Expose-Headers": "Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version"
+							"Access-Control-Expose-Headers":
+								"Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version",
 						},
 					});
 				}
 
 				// If Accept header doesn't include text/event-stream, return 405
-				return new Response(JSON.stringify({
-					jsonrpc: "2.0",
-					error: {
-						code: -32000,
-						message: "Method not allowed"
+				return new Response(
+					JSON.stringify({
+						jsonrpc: "2.0",
+						error: {
+							code: -32000,
+							message: "Method not allowed",
+						},
+						id: null,
+					}),
+					{
+						status: 405,
+						headers: {
+							"Content-Type": "application/json",
+							"Access-Control-Allow-Origin": "*",
+						},
 					},
-					id: null
-				}), {
-					status: 405,
-					headers: {
-						"Content-Type": "application/json",
-						"Access-Control-Allow-Origin": "*",
-					}
-				});
+				);
 			}
 
 			const response = await FinmapMcpServer.serve("/").fetch(
@@ -95,12 +101,18 @@ export default {
 			// Add CORS headers to response
 			const newHeaders = new Headers(response.headers);
 			newHeaders.set("Access-Control-Allow-Origin", "*");
-			newHeaders.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+			newHeaders.set(
+				"Access-Control-Allow-Methods",
+				"GET, POST, DELETE, OPTIONS",
+			);
 			newHeaders.set(
 				"Access-Control-Allow-Headers",
 				"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, Last-Event-ID",
 			);
-			newHeaders.set("Access-Control-Expose-Headers", "Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version");
+			newHeaders.set(
+				"Access-Control-Expose-Headers",
+				"Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version",
+			);
 
 			return new Response(response.body, {
 				status: response.status,
