@@ -48,7 +48,7 @@ export default {
 						(async () => {
 							// Keep connection alive and allow server to send events
 							while (true) {
-								await new Promise((resolve) => setTimeout(resolve, 1000));
+								await new Promise((resolve) => setTimeout(resolve, 30000));
 								try {
 									await writer.write(encoder.encode(":\n\n")); // Keep-alive ping
 								} catch (e) {
