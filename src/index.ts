@@ -46,8 +46,6 @@ export default {
 					// Handle server side event stream
 					ctx.waitUntil(
 						(async () => {
-							const server = await FinmapMcpServer.serve("/");
-
 							// Keep connection alive and allow server to send events
 							while (true) {
 								await new Promise((resolve) => setTimeout(resolve, 1000));
