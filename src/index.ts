@@ -15,6 +15,8 @@ export class FinmapMcpServer extends McpAgent {
 
 type Env = {};
 
+const serverPromise = FinmapMcpServer.serve("/");
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
@@ -101,11 +103,8 @@ export default {
 				);
 			}
 
-			const response = await FinmapMcpServer.serve("/").fetch(
-				request,
-				env,
-				ctx,
-			);
+			const server = await serverPromise;
+			const response = await server.fetch(request, env, ctx);
 
 			// Add CORS headers to response
 			const newHeaders = new Headers(response.headers);
