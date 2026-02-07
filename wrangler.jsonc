@@ -8,6 +8,7 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-10",
 	"compatibility_flags": ["nodejs_compat"],
+	"workers_dev": false,
 	"migrations": [
 		{
 			"new_sqlite_classes": ["FinmapMcpServer"],
