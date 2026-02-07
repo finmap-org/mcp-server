@@ -46,8 +46,17 @@ export default {
 					// Handle server side event stream
 					ctx.waitUntil(
 						(async () => {
+							const handleAbort = () => {
+								try {
+									writer.close();
+								} catch (e) {
+									// Ignore errors from closing the stream
+								}
+							};
+							request.signal.addEventListener("abort", handleAbort);
+
 							// Keep connection alive and allow server to send events
-							while (true) {
+							while (!request.signal.aborted) {
 								await new Promise((resolve) => setTimeout(resolve, 20000));
 								try {
 									await writer.write(encoder.encode(":\n\n")); // Keep-alive ping
@@ -55,6 +64,8 @@ export default {
 									break; // Client disconnected
 								}
 							}
+
+							request.signal.removeEventListener("abort", handleAbort);
 						})(),
 					);
 
