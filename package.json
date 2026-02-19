@@ -1,6 +1,6 @@
 {
 	"name": "finmap-mcp",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"description": "MCP server providing financial market data from finmap.org",
 	"main": "./dist/stdio-server.js",
 	"type": "module",
