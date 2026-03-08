@@ -61,9 +61,9 @@ npx finmap-mcp
 
 ## Available Tools
 
-### 1. `list_exchanges`
-  - Title: List exchanges
-  - Description: Return supported exchanges with IDs, names, country, currency, earliest available date, and update frequency.
+### 1. `list_supported_exchanges`
+  - Title: List supported stock exchanges
+  - Description: Return metadata for all supported stock exchanges in the Finmap dataset. Includes exchange ID, exchange name, country, currency, earliest available historical data date, and update frequency.
 
   **Example Promt:** `#finmap-mcp list available stock exchanges`
 
@@ -139,9 +139,9 @@ npx finmap-mcp
   }
   ```
 
-### 2. `list_sectors`
-  - Title: List sectors
-  - Description: List available business sectors for an exchange on a specific date, including item counts.
+### 2. `list_exchange_sectors`
+  - Title: List sectors for a stock exchange
+  - Description: Return all business sectors available on a specific exchange and trading date. Each sector includes the number of companies in that sector.
 
   **Example Promt:** `#finmap-mcp List sectors for the Turkish stock exchange`
   
@@ -236,9 +236,9 @@ npx finmap-mcp
   }
   ```
 
-### 3. `list_tickers`
-  - Title: List tickers by sector
-  - Description: Return company tickers and names for an exchange on a specific date, grouped by sector.
+### 3. `list_sector_companies`
+  - Title: List companies by sector
+  - Description: Return company tickers and names grouped by sector for an exchange on a specific trading date. Optionally filter results by a single sector.
 
   **Example Promt:** `#finmap-mcp List companies in the Real Estate sector`
   
@@ -271,9 +271,9 @@ npx finmap-mcp
   }
   ```
 
-### 4. `search_companies`
-  - Title: Search companies
-  - Description: Find companies by partial name or ticker on an exchange and return best matches.
+### 4. `search_exchange_companies`
+  - Title: Search companies by name or ticker
+  - Description: Search for companies on a specific exchange by partial ticker symbol or company name. Results are ranked by relevance using ticker and name similarity.
 
   **Example Promt:** `#finmap-mcp Search for companies named 'Sprouts'`
 
@@ -295,9 +295,9 @@ npx finmap-mcp
   }
   ```
 
-### 5. `get_market_overview`
-  - Title: Market overview
-  - Description: Get total market cap, volume, value, and performance for an exchange on a specific date with a sector breakdown.
+### 5. `analyze_market_overview`
+  - Title: Analyze market overview
+  - Description: Return aggregated statistics for a stock exchange on a specific date. Includes total market capitalization, trading volume, total traded value, number of trades, and sector-level market breakdown.
 
   **Example Promt:** `#finmap-mcp market overview for Nasdaq`
   
@@ -358,9 +358,9 @@ npx finmap-mcp
   }
   ```
 
-### 6. `get_sectors_overview`
-  - Title: Sector performance
-  - Description: Get aggregated performance metrics by sector for an exchange on a specific date.
+### 6. `analyze_sector_performance`
+  - Title: Analyze sector performance
+  - Description: Return aggregated metrics for each sector in a stock exchange. Includes sector market capitalization, price change percentage, trading volume, traded value, number of trades, and number of companies in the sector.
 
   **Example Promt:** `#finmap-mcp Get overview for the Utilities sector`
   
@@ -384,9 +384,9 @@ npx finmap-mcp
   }
   ```
 
-### 7. `get_stock_data`
-  - Title: Stock data by ticker
-  - Description: Get detailed market data for a specific ticker on an exchange and date, including price, change, volume, value, market cap, and trades.
+### 7. `get_stock_snapshot`
+  - Title: Get stock market snapshot
+  - Description: Return detailed trading metrics for a single stock ticker on a specific exchange and trading date. Includes price open, last sale price, price change percentage, trading volume, traded value, number of trades, and market capitalization.
 
   **Example Promt:** `#finmap-mcp Dominion Energy, stock data`
   
@@ -412,9 +412,9 @@ npx finmap-mcp
   }
   ```
 
-### 8. `rank_stocks`
-  - Title: Rank stocks
-  - Description: Rank stocks on an exchange by a chosen metric (marketCap, priceChangePct, volume, value, numTrades) for a specific date with order and limit.
+### 8. `rank_exchange_companies`
+  - Title: Rank companies by market metric
+  - Description: Return companies ranked by a selected market metric on a specific exchange. Supported ranking metrics: market capitalization, price change percentage, trading volume, traded value, and number of trades. Results can be limited and optionally filtered by sector.
 
   **Example Promt:** `#finmap-mcp UK, rank stocks by market cap`
   
@@ -488,9 +488,9 @@ npx finmap-mcp
   }
   ```
 
-### 9. `get_company_profile`
-  - Title: Company profile (US)
-  - Description: Get business description, industry, and background for a US-listed company by ticker.
+### 9. `get_company_profile_us`
+  - Title: Get US company profile
+  - Description: Return business description and background information for a US-listed company. Supported exchanges: NASDAQ, NYSE, and AMEX.
 
   **Example Promt:** `#finmap-mcp Sprouts Farmers Market, get company profile`
   
