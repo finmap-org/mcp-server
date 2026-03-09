@@ -1,0 +1,588 @@
+openapi: 3.1.0
+info:
+  title: Finmap GPT API Wrapper
+  description: GPT Actions schema for Finmap API wrapper endpoints.
+  version: "1.0.0"
+servers:
+  - url: https://mcp.finmap.org
+paths:
+  /api/list-exchanges:
+    get:
+      operationId: list_supported_exchanges
+      summary: List supported stock exchanges
+      description: Return metadata for all supported stock exchanges in the Finmap dataset.
+      x-openai-isConsequential: false
+      responses:
+        "200":
+          description: Supported exchanges metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListExchangesResponse"
+  /api/list-sectors:
+    post:
+      operationId: list_exchange_sectors
+      summary: List sectors for a stock exchange
+      description: Return all business sectors available on an exchange and trading date.
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListSectorsRequest"
+      responses:
+        "200":
+          description: Sector list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSectorsResponse"
+  /api/list-sector-companies:
+    post:
+      operationId: list_sector_companies
+      summary: List companies by sector
+      description: Return company tickers and names grouped by sector for an exchange and date.
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListSectorCompaniesRequest"
+      responses:
+        "200":
+          description: Companies grouped by sector.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSectorCompaniesResponse"
+  /api/search-companies:
+    post:
+      operationId: search_exchange_companies
+      summary: Search companies by name or ticker
+      description: |
+        Search for companies on an exchange using a partial ticker symbol
+        or company name. Results are ranked by relevance.
+
+        Use this tool when the user:
+        • does not know the ticker symbol
+        • provides an incomplete company name
+        • wants to find companies matching a keyword
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchCompaniesRequest"
+      responses:
+        "200":
+          description: Search results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchCompaniesResponse"
+  /api/market-overview:
+    post:
+      operationId: analyze_market_overview
+      summary: Analyze market overview
+      description: Return aggregate market statistics and sector breakdown.
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketOverviewRequest"
+      responses:
+        "200":
+          description: Market overview.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketOverviewResponse"
+  /api/sector-performance:
+    post:
+      operationId: analyze_sector_performance
+      summary: Analyze sector performance
+      description: Return aggregate metrics for sectors on an exchange.
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectorPerformanceRequest"
+      responses:
+        "200":
+          description: Sector performance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SectorPerformanceResponse"
+  /api/rank-stocks:
+    post:
+      operationId: rank_exchange_companies
+      summary: Rank companies by market metric
+      description: |
+        Return companies ranked by a selected market metric such as
+        market capitalization, price change percentage, trading volume,
+        or traded value.
+
+        Use this tool when the user asks for:
+        • top companies
+        • largest companies
+        • biggest market cap
+        • top gainers or losers
+        • most traded stocks
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RankStocksRequest"
+      responses:
+        "200":
+          description: Ranked companies.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RankStocksResponse"
+  /api/stock-snapshot:
+    post:
+      operationId: get_stock_snapshot
+      summary: Get stock market snapshot
+      description: |
+        Return detailed trading metrics for a single stock ticker on an exchange
+        and trading date, including price, change percentage, volume, traded
+        value, number of trades, and market capitalization.
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockSnapshotRequest"
+      responses:
+        "200":
+          description: Stock snapshot.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockSnapshotResponse"
+  /api/company-profile:
+    post:
+      operationId: get_company_profile_us
+      summary: Get US company profile
+      description: Return profile information for a US-listed company.
+      x-openai-isConsequential: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyProfileRequest"
+      responses:
+        "200":
+          description: Company profile.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyProfileResponse"
+components:
+  schemas:
+    ExchangeDateInput:
+      type: object
+      required: [stockExchange]
+      description: |
+        Trading date for the query. If omitted, the latest available
+        trading date will be used automatically.
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+
+    ListSectorsRequest:
+      type: object
+      required: [stockExchange]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+
+    ListSectorCompaniesRequest:
+      type: object
+      required: [stockExchange]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+        sector:
+          type: string
+        englishNames:
+          type: boolean
+          default: true
+
+    SearchCompaniesRequest:
+      type: object
+      required: [stockExchange, query]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+        query:
+          type: string
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 10
+          description: Maximum number of results returned.
+
+    MarketOverviewRequest:
+      type: object
+      required: [stockExchange]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+
+    SectorPerformanceRequest:
+      type: object
+      required: [stockExchange]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+        sector:
+          type: string
+
+    RankStocksRequest:
+      type: object
+      required: [stockExchange, sortBy]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+        sortBy:
+          type: string
+          enum: [priceChangePct, marketCap, value, volume, numTrades]
+        order:
+          type: string
+          enum: [asc, desc]
+          default: desc
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Maximum number of results returned.
+        sector:
+          type: string
+
+    StockSnapshotRequest:
+      type: object
+      required: [stockExchange, ticker]
+      properties:
+        stockExchange:
+          type: string
+          enum: [amex, nasdaq, nyse, us-all, lse, moex, bist, hkex]
+        year:
+          type: integer
+          minimum: 2012
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        day:
+          type: integer
+          minimum: 1
+          maximum: 31
+        ticker:
+          type: string
+
+    CompanyProfileRequest:
+      type: object
+      required: [exchange, ticker]
+      properties:
+        exchange:
+          type: string
+          enum: [amex, nasdaq, nyse]
+        ticker:
+          type: string
+
+    ListExchangesResponse:
+      type: object
+      properties:
+        info:
+          type: object
+          properties:
+            provider:
+              type: string
+        exchanges:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              country:
+                type: string
+              currency:
+                type: string
+              availableSince:
+                type: string
+              updateFrequency:
+                type: string
+
+    ListSectorsResponse:
+      type: object
+      properties:
+        date:
+          type: string
+        exchange:
+          type: string
+        currency:
+          type: string
+        sectors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              itemsPerSector:
+                type: integer
+
+    ListSectorCompaniesResponse:
+      type: object
+      properties:
+        date:
+          type: string
+        exchange:
+          type: string
+        currency:
+          type: string
+        sectors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: object
+              properties:
+                ticker:
+                  type: string
+                name:
+                  type: string
+
+    SearchCompaniesResponse:
+      type: object
+      properties:
+        date:
+          type: string
+        exchange:
+          type: string
+        query:
+          type: string
+        matches:
+          type: array
+          items:
+            type: object
+            properties:
+              ticker:
+                type: string
+              name:
+                type: string
+              sector:
+                type: string
+              score:
+                type: integer
+
+    MarketOverviewResponse:
+      type: object
+      properties:
+        date:
+          type: string
+        exchange:
+          type: string
+        currency:
+          type: string
+        marketTotal:
+          type: object
+          properties:
+            name:
+              type: string
+            marketCap:
+              type: number
+        sectors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              marketCap:
+                type: number
+
+    SectorPerformanceResponse:
+      type: object
+      properties:
+        date:
+          type: string
+        exchange:
+          type: string
+        currency:
+          type: string
+        sectors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              marketCap:
+                type: number
+
+    RankStocksResponse:
+      type: object
+      properties:
+        date:
+          type: string
+        exchange:
+          type: string
+        sortBy:
+          type: string
+        order:
+          type: string
+        limit:
+          type: integer
+        count:
+          type: integer
+        stocks:
+          type: array
+          items:
+            type: object
+            properties:
+              ticker:
+                type: string
+              name:
+                type: string
+              sector:
+                type: string
+              marketCap:
+                type: number
+              priceChangePct:
+                type: number
+
+    StockSnapshotResponse:
+      type: object
+      properties:
+        exchange:
+          type: string
+        country:
+          type: string
+        ticker:
+          type: string
+        nameEng:
+          type: string
+        priceLastSale:
+          type: number
+        priceChangePct:
+          type: number
+        volume:
+          type: number
+        value:
+          type: number
+        numTrades:
+          type: number
+        marketCap:
+          type: number
+
+    CompanyProfileResponse:
+      type: object
+      properties:
+        data:
+          type: object
+        charts:
+          type: object
