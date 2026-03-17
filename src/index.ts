@@ -204,10 +204,7 @@ export default {
 			// Add CORS headers to response
 			const newHeaders = new Headers(response.headers);
 			newHeaders.set("Access-Control-Allow-Origin", "*");
-			newHeaders.set(
-				"Access-Control-Allow-Methods",
-				"GET, POST, DELETE, OPTIONS",
-			);
+			newHeaders.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
 			newHeaders.set(
 				"Access-Control-Allow-Headers",
 				"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, Last-Event-ID",

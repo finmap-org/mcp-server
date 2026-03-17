@@ -26,9 +26,7 @@ function createResponse(data: unknown) {
 }
 
 function createErrorResponse(error: unknown) {
-	return createResponse(
-		`ERROR: ${error instanceof Error ? error.message : String(error)}`,
-	);
+	return createResponse(`ERROR: ${error instanceof Error ? error.message : String(error)}`);
 }
 
 export function registerFinmapTools(server: McpServer) {
@@ -59,9 +57,7 @@ export function registerFinmapTools(server: McpServer) {
 		},
 		async (input) => {
 			try {
-				return createResponse(
-					await listSectors(listSectorsSchema.parse(input)),
-				);
+				return createResponse(await listSectors(listSectorsSchema.parse(input)));
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -78,9 +74,7 @@ export function registerFinmapTools(server: McpServer) {
 		},
 		async (input) => {
 			try {
-				return createResponse(
-					await listTickers(listTickersSchema.parse(input)),
-				);
+				return createResponse(await listTickers(listTickersSchema.parse(input)));
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -97,9 +91,7 @@ export function registerFinmapTools(server: McpServer) {
 		},
 		async (input) => {
 			try {
-				return createResponse(
-					await searchCompanies(searchCompaniesSchema.parse(input)),
-				);
+				return createResponse(await searchCompanies(searchCompaniesSchema.parse(input)));
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -116,9 +108,7 @@ export function registerFinmapTools(server: McpServer) {
 		},
 		async (input) => {
 			try {
-				return createResponse(
-					await getMarketOverview(marketOverviewSchema.parse(input)),
-				);
+				return createResponse(await getMarketOverview(marketOverviewSchema.parse(input)));
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -135,9 +125,7 @@ export function registerFinmapTools(server: McpServer) {
 		},
 		async (input) => {
 			try {
-				return createResponse(
-					await getSectorsOverview(sectorsOverviewSchema.parse(input)),
-				);
+				return createResponse(await getSectorsOverview(sectorsOverviewSchema.parse(input)));
 			} catch (error) {
 				return createErrorResponse(error);
 			}
@@ -188,9 +176,7 @@ export function registerFinmapTools(server: McpServer) {
 		},
 		async (input) => {
 			try {
-				return createResponse(
-					await getCompanyProfile(companyProfileSchema.parse(input)),
-				);
+				return createResponse(await getCompanyProfile(companyProfileSchema.parse(input)));
 			} catch (error) {
 				return createErrorResponse(error);
 			}

@@ -3,8 +3,7 @@ export const DATA_BASE_URL = "https://raw.githubusercontent.com/finmap-org";
 
 export const INFO = {
 	provider: "finmap.org",
-	description:
-		"Discover interactive stock charts and curated news at finmap.org",
+	description: "Discover interactive stock charts and curated news at finmap.org",
 	github: "https://github.com/finmap-org",
 	donate: {
 		patreon: "https://patreon.com/finmap",
@@ -27,13 +26,7 @@ export const STOCK_EXCHANGES = [
 
 export const US_EXCHANGES = ["amex", "nasdaq", "nyse"] as const;
 
-export const SORT_FIELDS = [
-	"priceChangePct",
-	"marketCap",
-	"value",
-	"volume",
-	"numTrades",
-] as const;
+export const SORT_FIELDS = ["priceChangePct", "marketCap", "value", "volume", "numTrades"] as const;
 
 export const SORT_ORDERS = ["asc", "desc"] as const;
 

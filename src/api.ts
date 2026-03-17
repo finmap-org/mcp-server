@@ -1,11 +1,5 @@
 import { z } from "zod";
-import {
-	BASE_URL,
-	EXCHANGE_INFO,
-	INDICES,
-	INFO,
-	type SortField,
-} from "./domain/constants.js";
+import { BASE_URL, EXCHANGE_INFO, INDICES, INFO, type SortField } from "./domain/constants.js";
 import {
 	companyProfileSchema,
 	listSectorsSchema,
@@ -55,11 +49,7 @@ function createCharts(exchange: string, date?: string) {
 	};
 }
 
-function calculateMatchScore(
-	ticker: string,
-	name: string,
-	searchTerm: string,
-): number {
+function calculateMatchScore(ticker: string, name: string, searchTerm: string): number {
 	const tickerLower = ticker.toLowerCase();
 	const nameLower = name.toLowerCase();
 
@@ -167,10 +157,7 @@ export function listExchanges() {
 
 export async function listSectors(input: z.infer<typeof listSectorsSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
 	const sectorCounts: Record<string, number> = {};
 	for (const item of marketDataResponse.securities.data) {
 		if (item[INDICES.TYPE] !== "sector" && item[INDICES.SECTOR]) {
@@ -193,14 +180,8 @@ export async function listSectors(input: z.infer<typeof listSectorsSchema>) {
 
 export async function listTickers(input: z.infer<typeof listTickersSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
-	const sectorGroups: Record<
-		string,
-		Array<{ ticker: string; name: string }>
-	> = {};
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
+	const sectorGroups: Record<string, Array<{ ticker: string; name: string }>> = {};
 	for (const item of marketDataResponse.securities.data) {
 		if (
 			item[INDICES.TYPE] !== "sector" &&
@@ -211,8 +192,7 @@ export async function listTickers(input: z.infer<typeof listTickersSchema>) {
 			const ticker = item[INDICES.TICKER] as string;
 			const name = input.englishNames
 				? (item[INDICES.NAME_ENG] as string)
-				: ((item[INDICES.NAME_ORIGINAL_SHORT] ||
-						item[INDICES.NAME_ENG]) as string);
+				: ((item[INDICES.NAME_ORIGINAL_SHORT] || item[INDICES.NAME_ENG]) as string);
 			if (ticker && name) {
 				if (!sectorGroups[sectorName]) sectorGroups[sectorName] = [];
 				sectorGroups[sectorName].push({ ticker, name });
@@ -231,14 +211,9 @@ export async function listTickers(input: z.infer<typeof listTickersSchema>) {
 	};
 }
 
-export async function searchCompanies(
-	input: z.infer<typeof searchCompaniesSchema>,
-) {
+export async function searchCompanies(input: z.infer<typeof searchCompaniesSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
 	const searchTerm = input.query.toLowerCase();
 	const matches: SearchMatch[] = [];
 	for (const item of marketDataResponse.securities.data) {
@@ -256,8 +231,7 @@ export async function searchCompanies(
 	}
 
 	const topMatches = keepTopK(matches, input.limit, (candidate, current) => {
-		if (candidate.score !== current.score)
-			return candidate.score > current.score;
+		if (candidate.score !== current.score) return candidate.score > current.score;
 		return candidate.ticker.localeCompare(current.ticker) < 0;
 	});
 
@@ -271,14 +245,9 @@ export async function searchCompanies(
 	};
 }
 
-export async function getMarketOverview(
-	input: z.infer<typeof marketOverviewSchema>,
-) {
+export async function getMarketOverview(input: z.infer<typeof marketOverviewSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
 
 	const sectorItems = marketDataResponse.securities.data.filter(
 		(item) => item[INDICES.TYPE] === "sector",
@@ -311,19 +280,12 @@ export async function getMarketOverview(
 	};
 }
 
-export async function getSectorsOverview(
-	input: z.infer<typeof sectorsOverviewSchema>,
-) {
+export async function getSectorsOverview(input: z.infer<typeof sectorsOverviewSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
 
 	const sectors = marketDataResponse.securities.data
-		.filter(
-			(item) => item[INDICES.TYPE] === "sector" && item[INDICES.SECTOR] !== "",
-		)
+		.filter((item) => item[INDICES.TYPE] === "sector" && item[INDICES.SECTOR] !== "")
 		.filter((item) => !input.sector || item[INDICES.TICKER] === input.sector)
 		.map((item) => ({
 			name: item[INDICES.TICKER],
@@ -347,15 +309,11 @@ export async function getSectorsOverview(
 
 export async function rankStocks(input: z.infer<typeof rankStocksSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
 
 	const stocks: RankedStock[] = [];
 	for (const item of marketDataResponse.securities.data) {
-		if (item[INDICES.TYPE] === "sector" || item[INDICES.SECTOR] === "")
-			continue;
+		if (item[INDICES.TYPE] === "sector" || item[INDICES.SECTOR] === "") continue;
 		if (input.sector && item[INDICES.SECTOR] !== input.sector) continue;
 		stocks.push({
 			ticker: item[INDICES.TICKER] as string,
@@ -374,9 +332,7 @@ export async function rankStocks(input: z.infer<typeof rankStocksSchema>) {
 		const candidateValue = candidate[input.sortBy as SortField] as number;
 		const currentValue = current[input.sortBy as SortField] as number;
 		if (candidateValue !== currentValue) {
-			return input.order === "desc"
-				? candidateValue > currentValue
-				: candidateValue < currentValue;
+			return input.order === "desc" ? candidateValue > currentValue : candidateValue < currentValue;
 		}
 		return candidate.ticker.localeCompare(current.ticker) < 0;
 	});
@@ -397,14 +353,10 @@ export async function rankStocks(input: z.infer<typeof rankStocksSchema>) {
 
 export async function getStockData(input: z.infer<typeof stockDataSchema>) {
 	const formattedDate = getDate(input.year, input.month, input.day);
-	const marketDataResponse = await fetchMarketData(
-		input.stockExchange,
-		formattedDate,
-	);
+	const marketDataResponse = await fetchMarketData(input.stockExchange, formattedDate);
 
 	const stockData = marketDataResponse.securities.data.find(
-		(item) =>
-			item[INDICES.TYPE] !== "sector" && item[INDICES.TICKER] === input.ticker,
+		(item) => item[INDICES.TYPE] !== "sector" && item[INDICES.TICKER] === input.ticker,
 	);
 	if (!stockData) {
 		throw new Error(
@@ -434,13 +386,11 @@ export async function getStockData(input: z.infer<typeof stockDataSchema>) {
 	};
 }
 
-export async function getCompanyProfile(
-	input: z.infer<typeof companyProfileSchema>,
-) {
-	const securityInfo = (await fetchSecurityInfo(
-		input.exchange,
-		input.ticker,
-	)) as Record<string, unknown>;
+export async function getCompanyProfile(input: z.infer<typeof companyProfileSchema>) {
+	const securityInfo = (await fetchSecurityInfo(input.exchange, input.ticker)) as Record<
+		string,
+		unknown
+	>;
 	return {
 		info: INFO,
 		charts: createCharts(input.exchange),
@@ -453,8 +403,7 @@ export function getApiOpenApiSpec(baseUrl: string) {
 		openapi: "3.1.0",
 		info: {
 			title: "Finmap GPT API",
-			description:
-				"Compact HTTP API for GPT Actions backed by Finmap MCP logic",
+			description: "Compact HTTP API for GPT Actions backed by Finmap MCP logic",
 			version: "1.0.0",
 		},
 		servers: [{ url: baseUrl }],
@@ -463,8 +412,7 @@ export function getApiOpenApiSpec(baseUrl: string) {
 				get: {
 					operationId: "list_supported_exchanges",
 					summary: "List supported stock exchanges",
-					description:
-						"Return metadata for all supported stock exchanges in the Finmap dataset.",
+					description: "Return metadata for all supported stock exchanges in the Finmap dataset.",
 					"x-openai-isConsequential": false,
 				},
 			},
@@ -472,8 +420,7 @@ export function getApiOpenApiSpec(baseUrl: string) {
 				post: {
 					operationId: "list_exchange_sectors",
 					summary: "List sectors for a stock exchange",
-					description:
-						"Return all business sectors available on an exchange and trading date.",
+					description: "Return all business sectors available on an exchange and trading date.",
 					"x-openai-isConsequential": false,
 				},
 			},
@@ -499,8 +446,7 @@ export function getApiOpenApiSpec(baseUrl: string) {
 				post: {
 					operationId: "analyze_market_overview",
 					summary: "Analyze market overview",
-					description:
-						"Return aggregate market statistics with sector-level breakdown.",
+					description: "Return aggregate market statistics with sector-level breakdown.",
 					"x-openai-isConsequential": false,
 				},
 			},
@@ -508,8 +454,7 @@ export function getApiOpenApiSpec(baseUrl: string) {
 				post: {
 					operationId: "analyze_sector_performance",
 					summary: "Analyze sector performance",
-					description:
-						"Return aggregated metrics for sectors on an exchange and date.",
+					description: "Return aggregated metrics for sectors on an exchange and date.",
 					"x-openai-isConsequential": false,
 				},
 			},
@@ -535,8 +480,7 @@ export function getApiOpenApiSpec(baseUrl: string) {
 				post: {
 					operationId: "get_company_profile_us",
 					summary: "Get US company profile",
-					description:
-						"Return business description and company metadata for US-listed tickers.",
+					description: "Return business description and company metadata for US-listed tickers.",
 					"x-openai-isConsequential": false,
 				},
 			},
