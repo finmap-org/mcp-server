@@ -35,21 +35,33 @@ export class FinmapMcpServer extends McpAgent {
 
 type Env = object;
 
-const serverPromise = FinmapMcpServer.serve("/");
+const apiAllowHeaders = "Content-Type, Accept, Authorization";
+const mcpAllowHeaders =
+	"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, last-event-id";
+const mcpExposeHeaders = "Content-Type, Authorization, mcp-session-id, mcp-protocol-version";
+
+const serverPromise = FinmapMcpServer.serve("/", {
+	corsOptions: {
+		origin: "*",
+		methods: "GET, POST, DELETE, OPTIONS",
+		headers: mcpAllowHeaders,
+		maxAge: 86400,
+		exposeHeaders: mcpExposeHeaders,
+	},
+});
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
-		// Handle CORS preflight requests
-		if (request.method === "OPTIONS") {
+		// Handle CORS preflight requests for REST API endpoints
+		if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
 			return new Response(null, {
 				status: 200,
 				headers: {
 					"Access-Control-Allow-Origin": "*",
 					"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-					"Access-Control-Allow-Headers":
-						"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, Last-Event-ID",
+					"Access-Control-Allow-Headers": apiAllowHeaders,
 					"Access-Control-Max-Age": "86400",
 				},
 			});
@@ -131,94 +143,10 @@ export default {
 		}
 
 		if (url.pathname === "/") {
-			// Handle GET requests for SSE stream
-			if (request.method === "GET") {
-				const acceptHeader = request.headers.get("Accept");
-				if (acceptHeader?.includes("text/event-stream")) {
-					// Create a transform stream to handle SSE events
-					const { readable, writable } = new TransformStream();
-					const writer = writable.getWriter();
-					const encoder = new TextEncoder();
-
-					// Handle server side event stream
-					ctx.waitUntil(
-						(async () => {
-							const handleAbort = () => {
-								try {
-									writer.close();
-								} catch (_e) {
-									// Ignore errors from closing the stream
-								}
-							};
-							request.signal.addEventListener("abort", handleAbort);
-
-							// Keep connection alive and allow server to send events
-							while (!request.signal.aborted) {
-								await new Promise((resolve) => setTimeout(resolve, 20000));
-								try {
-									await writer.write(encoder.encode(":\n\n")); // Keep-alive ping
-								} catch (_e) {
-									break; // Client disconnected
-								}
-							}
-
-							request.signal.removeEventListener("abort", handleAbort);
-						})(),
-					);
-
-					return new Response(readable, {
-						headers: {
-							"Content-Type": "text/event-stream",
-							"Cache-Control": "no-cache",
-							Connection: "keep-alive",
-							"Access-Control-Allow-Origin": "*",
-							"Access-Control-Expose-Headers":
-								"Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version",
-						},
-					});
-				}
-
-				// If Accept header doesn't include text/event-stream, return 405
-				return new Response(
-					JSON.stringify({
-						jsonrpc: "2.0",
-						error: {
-							code: -32000,
-							message: "Method not allowed",
-						},
-						id: null,
-					}),
-					{
-						status: 405,
-						headers: {
-							"Content-Type": "application/json",
-							"Access-Control-Allow-Origin": "*",
-						},
-					},
-				);
-			}
-
 			const server = await serverPromise;
 			const response = await server.fetch(request, env, ctx);
 
-			// Add CORS headers to response
-			const newHeaders = new Headers(response.headers);
-			newHeaders.set("Access-Control-Allow-Origin", "*");
-			newHeaders.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-			newHeaders.set(
-				"Access-Control-Allow-Headers",
-				"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, Last-Event-ID",
-			);
-			newHeaders.set(
-				"Access-Control-Expose-Headers",
-				"Content-Type, Authorization, Mcp-Session-Id, mcp-protocol-version",
-			);
-
-			return new Response(response.body, {
-				status: response.status,
-				statusText: response.statusText,
-				headers: newHeaders,
-			});
+			return response;
 		}
 
 		return new Response("Not found", { status: 404 });
