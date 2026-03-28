@@ -96,8 +96,8 @@ function keepTopK<T>(
 	const isWorse = (a: T, b: T) => isBetter(b, a);
 
 	const swap = (i: number, j: number) => {
-		const tmp = heap[i];
-		heap[i] = heap[j];
+		const tmp = heap[i]!;
+		heap[i] = heap[j]!;
 		heap[j] = tmp;
 	};
 
@@ -105,7 +105,7 @@ function keepTopK<T>(
 		let idx = index;
 		while (idx > 0) {
 			const parent = Math.floor((idx - 1) / 2);
-			if (!isWorse(heap[idx], heap[parent])) break;
+			if (!isWorse(heap[idx]!, heap[parent]!)) break;
 			swap(idx, parent);
 			idx = parent;
 		}
@@ -118,10 +118,10 @@ function keepTopK<T>(
 			const right = left + 1;
 			let smallest = idx;
 
-			if (left < heap.length && isWorse(heap[left], heap[smallest])) {
+			if (left < heap.length && isWorse(heap[left]!, heap[smallest]!)) {
 				smallest = left;
 			}
-			if (right < heap.length && isWorse(heap[right], heap[smallest])) {
+			if (right < heap.length && isWorse(heap[right]!, heap[smallest]!)) {
 				smallest = right;
 			}
 			if (smallest === idx) break;
@@ -137,7 +137,7 @@ function keepTopK<T>(
 			continue;
 		}
 
-		if (isBetter(item, heap[0])) {
+		if (isBetter(item, heap[0]!)) {
 			heap[0] = item;
 			bubbleDown(0);
 		}
