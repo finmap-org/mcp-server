@@ -58,9 +58,10 @@
 	},
 	"scripts": {
 		"clean": "rimraf dist",
+		"cf-typegen": "wrangler types",
 		"build": "npm run clean && npm run build:stdio && npm run build:worker",
 		"build:stdio": "npm run clean && tsc --project tsconfig.stdio.json",
-		"build:worker": "wrangler types && wrangler build",
+		"build:worker": "npm run cf-typegen && wrangler build",
 		"dev:stdio": "tsx src/stdio-server.ts",
 		"dev:worker": "wrangler dev",
 		"deploy": "wrangler deploy",
