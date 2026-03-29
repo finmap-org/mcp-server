@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "finmap-mcp",
+	"name": "mcp-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-03-28",
 	"compatibility_flags": ["nodejs_compat"],
