@@ -9,21 +9,12 @@
 	"compatibility_date": "2026-03-28",
 	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": false,
-	"migrations": [
-		{
-			"new_sqlite_classes": ["FinmapMcpServer"],
-			"tag": "v2"
-		}
-	],
-	"durable_objects": {
-		"bindings": [
-			{
-				"class_name": "FinmapMcpServer",
-				"name": "MCP_OBJECT"
-			}
-		]
-	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"migrations": [
+		{
+			"tag": "v3"
+		}
+	]
 }
