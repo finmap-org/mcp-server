@@ -1,5 +1,5 @@
 import { registerFinmapTools } from "./core.js";
-import { McpAgent } from "agents/mcp";
+import { createMcpHandler } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
 	companyProfileSchema,
@@ -22,17 +22,6 @@ import {
 	listTickersSchema,
 } from "./api.js";
 
-export class FinmapMcpServer extends McpAgent {
-	server = new McpServer({
-		name: "finmap-mcp",
-		version: "3.1.1",
-	});
-
-	async init() {
-		registerFinmapTools(this.server);
-	}
-}
-
 type Env = object;
 
 const apiAllowHeaders = "Content-Type, Accept, Authorization";
@@ -40,15 +29,23 @@ const mcpAllowHeaders =
 	"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, last-event-id";
 const mcpExposeHeaders = "Content-Type, Authorization, mcp-session-id, mcp-protocol-version";
 
-const serverPromise = FinmapMcpServer.serve("/", {
-	corsOptions: {
-		origin: "*",
-		methods: "GET, POST, DELETE, OPTIONS",
-		headers: mcpAllowHeaders,
-		maxAge: 86400,
-		exposeHeaders: mcpExposeHeaders,
-	},
-});
+function createStatelessMcpHandler() {
+	const server = new McpServer({
+		name: "finmap-mcp",
+		version: "3.1.1",
+	});
+	registerFinmapTools(server);
+	return createMcpHandler(server, {
+		route: "/",
+		corsOptions: {
+			origin: "*",
+			methods: "GET, POST, DELETE, OPTIONS",
+			headers: mcpAllowHeaders,
+			maxAge: 86400,
+			exposeHeaders: mcpExposeHeaders,
+		},
+	});
+}
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -143,10 +140,7 @@ export default {
 		}
 
 		if (url.pathname === "/") {
-			const server = await serverPromise;
-			const response = await server.fetch(request, env, ctx);
-
-			return response;
+			return createStatelessMcpHandler()(request, env, ctx);
 		}
 
 		return new Response("Not found", { status: 404 });
