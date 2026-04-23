@@ -73,7 +73,7 @@
 		"package": "npm run build:stdio && npm pack --pack-destination dist"
 	},
 	"dependencies": {
-		"agents": "^0.11.0",
+		"agents": "^0.11.5",
 		"zod": "^4.3.6"
 	},
 	"devDependencies": {
@@ -81,7 +81,7 @@
 		"@types/node": "^25.6.0",
 		"rimraf": "^6.1.3",
 		"tsx": "^4.21.0",
-		"typescript": "6.0.2",
-		"wrangler": "^4.83.0"
+		"typescript": "6.0.3",
+		"wrangler": "^4.84.1"
 	}
 }
