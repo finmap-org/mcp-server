@@ -73,7 +73,7 @@
 		"package": "npm run build:stdio && npm pack --pack-destination dist"
 	},
 	"dependencies": {
-		"agents": "^0.16.1",
+		"agents": "^0.16.2",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
