@@ -25,7 +25,7 @@ import {
 export class FinmapMcpServer extends McpAgent {
 	server = new McpServer({
 		name: "finmap-mcp",
-		version: "3.2.10",
+		version: "3.2.11",
 	});
 
 	async init() {
