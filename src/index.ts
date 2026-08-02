@@ -35,15 +35,23 @@ export class FinmapMcpServer extends McpAgent {
 
 type Env = object;
 
-const apiAllowHeaders = "Content-Type, Accept, Authorization";
 const mcpAllowHeaders =
-	"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, last-event-id";
-const mcpExposeHeaders = "Content-Type, Authorization, mcp-session-id, mcp-protocol-version";
+	"Content-Type, Accept, Authorization, mcp-session-id, mcp-protocol-version, last-event-id, X-Requested-With";
+const mcpExposeHeaders =
+	"Content-Type, Authorization, mcp-session-id, mcp-protocol-version, Location";
+
+const corsHeaders = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD",
+	"Access-Control-Allow-Headers": mcpAllowHeaders,
+	"Access-Control-Expose-Headers": mcpExposeHeaders,
+	"Access-Control-Max-Age": "86400",
+};
 
 const serverPromise = FinmapMcpServer.serve("/", {
 	corsOptions: {
 		origin: "*",
-		methods: "GET, POST, DELETE, OPTIONS",
+		methods: "GET, POST, PUT, DELETE, OPTIONS, HEAD",
 		headers: mcpAllowHeaders,
 		maxAge: 86400,
 		exposeHeaders: mcpExposeHeaders,
@@ -54,22 +62,28 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext) {
 		const url = new URL(request.url);
 
-		// Handle CORS preflight requests for REST API endpoints
-		if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+		// Handle global CORS preflight requests for all endpoints
+		if (request.method === "OPTIONS") {
 			return new Response(null, {
-				status: 200,
-				headers: {
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-					"Access-Control-Allow-Headers": apiAllowHeaders,
-					"Access-Control-Max-Age": "86400",
-				},
+				status: 204,
+				headers: corsHeaders,
 			});
+		}
+
+		// Handle OAuth discovery and registration endpoints with explicit 404 + CORS headers
+		if (
+			url.pathname.startsWith("/.well-known/") ||
+			url.pathname === "/register"
+		) {
+			return Response.json(
+				{ error: "OAuth authentication not required" },
+				{ status: 404, headers: corsHeaders },
+			);
 		}
 
 		if (url.pathname === "/api/openapi.json") {
 			return Response.json(getApiOpenApiSpec(url.origin), {
-				headers: { "Access-Control-Allow-Origin": "*" },
+				headers: corsHeaders,
 			});
 		}
 
@@ -149,6 +163,6 @@ export default {
 			return response;
 		}
 
-		return new Response("Not found", { status: 404 });
+		return new Response("Not found", { status: 404, headers: corsHeaders });
 	},
 };
